@@ -1,0 +1,439 @@
+#ifndef _AUX_CLASSES_HPP
+#define _AUX_CLASSES_HPP
+
+#include <string>
+#include "dt.h"
+#include "portfolio.h"
+#include "log_entry.h"
+#include "aux_classes.h"
+#include "math.h" //fabs
+
+#include "portfolio.hpp"
+#include "log_entry.hpp"
+
+void c_quote::printquote(){
+  std::printf("%d-%02d-%02d %02d:%02d:%02d.%03d ",
+	    this->quote_dt->GetYear(),
+	    this->quote_dt->GetMonth(),
+	    this->quote_dt->GetDay(),
+	    this->quote_dt->GetHour(),
+	    this->quote_dt->GetMinute(),
+	    this->quote_dt->GetSecond(),
+	    this->quote_dt->GetMillisecond());
+
+  std::printf("%7.5f %4.2f %7.5f %4.2f\n",this->bid, this->bidsize/1e6, this->offer, this->offersize/1e6);
+}
+
+c_quote::c_quote(const c_quote & mycopy){
+  this->quote_dt = new dt(*(mycopy.quote_dt));
+  this->bid = mycopy.bid;
+  this->bidsize = mycopy.bidsize;
+  this->offer = mycopy.offer;
+  this->offersize = mycopy.offersize;
+}
+
+c_quote::c_quote(std::string datetimems, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize){
+  this->quote_dt = new dt(datetimems);
+  this->bid = stod(sbid);
+  this->bidsize = stod(sbidsize)*1e6;
+  this->offer = stod(soffer);
+  this->offersize = stod(soffersize)*1e6;
+}
+
+c_quote::c_quote(std::string datetimems, double dbid, double dbidsize, double doffer, double doffersize){
+  this->quote_dt = new dt(datetimems);
+  this->bid = (dbid);
+  this->bidsize = (dbidsize)*1e6;
+  this->offer = (doffer);
+  this->offersize = (doffersize)*1e6;
+}
+
+c_quote::~c_quote(){
+  delete this->quote_dt;
+  this->quote_dt = NULL;
+}
+
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+
+bool c_cycle::IfAdjustOrders(unsigned int q){
+
+  if(!(q%100==0))
+    return false;
+
+  dt * current_dt = new dt(*(this->cycle_quotes[q]->quote_dt));
+  if((current_dt->GetDayOfWeek()==0)&&(current_dt->GetHour()>=17)&&(current_dt->GetHour()<=23)){
+    delete current_dt;
+    current_dt=NULL;
+    return false;
+  }
+
+  double current_spot = 0.5*(this->cycle_quotes[q]->bid+this->cycle_quotes[q]->offer);
+  FXStraddle * mystraddle = new FXStraddle(*(this->my_portf->straddle));
+  bool ifadjustorders = false;
+
+  mystraddle->UpdateSpotDT(current_spot,*current_dt);
+
+  if(abs(-mystraddle->GetDeltaC1Amount()-this->my_portf->last_reb_delta_hedge)>this->manual_rebalancing_delta_fraction*mystraddle->GetC1Notional())
+    ifadjustorders=true;
+    
+  // if(this->my_portf->num_top>0){
+  //   mystraddle->UpdateSpotDT(this->my_portf->top_orders[0]->fxrate,*current_dt);
+
+  //  if(fabs(-mystraddle->GetDeltaC1Amount()-(this->my_portf->top_orders[0]->deltac1amt+this->my_portf->last_reb_delta_hedge))>0.1*mystraddle->GetC1Notional()){
+  //     ifadjustorders = true;
+  //   }
+  // }
+
+  // if((!ifadjustorders)&&(this->my_portf->num_bottom>0)){
+  //   mystraddle->UpdateSpotDT(this->my_portf->bottom_orders[0]->fxrate,*current_dt);
+  //   if(fabs(-mystraddle->GetDeltaC1Amount()-(this->my_portf->bottom_orders[0]->deltac1amt+this->my_portf->last_reb_delta_hedge))>0.1*mystraddle->GetC1Notional()){
+  //     ifadjustorders = true;
+  //   }
+  // }
+
+  delete mystraddle;
+  mystraddle=NULL;
+  delete current_dt;
+  current_dt = NULL;
+
+  return ifadjustorders;
+}
+
+bool c_cycle::IfSkipQuote(unsigned int q) const {
+  bool ifskipbid = false;
+  bool ifskipoffer = false;
+
+  if(this->my_portf->num_top>0){
+    if(this->cycle_quotes[q]->bidsize<0.1*fabs(this->my_portf->top_orders[0]->deltac1amt)){
+      ifskipbid=true;
+    }
+  }
+
+  if((!ifskipbid)&&(this->my_portf->num_bottom>0)){
+    if(this->cycle_quotes[q]->offersize<0.1*fabs(this->my_portf->bottom_orders[0]->deltac1amt)){
+      ifskipoffer=true;
+    }
+  }
+
+  return (ifskipbid||ifskipoffer);
+}
+
+void c_cycle::WriteToFile(std::string filename){
+  FILE * pFile;
+  pFile = fopen(filename.c_str(),"a+");
+
+  fprintf(pFile,"%-4d ",this->cycle_id);
+
+  fprintf(pFile,"%d-%02d-%02d %02d:%02d ",
+	    this->cycle_start_dt->GetYear(),
+	    this->cycle_start_dt->GetMonth(),
+	    this->cycle_start_dt->GetDay(),
+	    this->cycle_start_dt->GetHour(),
+	    this->cycle_start_dt->GetMinute());
+
+  fprintf(pFile,"%d-%02d-%02d %02d:%02d ",
+	    this->cycle_end_dt->GetYear(),
+	    this->cycle_end_dt->GetMonth(),
+	    this->cycle_end_dt->GetDay(),
+	    this->cycle_end_dt->GetHour(),
+	    this->cycle_end_dt->GetMinute());
+
+
+  fprintf(pFile,"%9.5f %9.5f %9.5f %5.2f %5d %5d %5d %4d %3d %6d ",
+	  this->strike,
+	  this->first_quote, 
+	  this->last_quote,
+	  this->vol*100,
+	  this->num_quotes/1000,
+	  this->my_portf->num_log_entries,
+	  this->my_portf->hit_orders,
+	  this->my_portf->market_orders,
+	  this->my_portf->hit_orders+this->my_portf->market_orders-this->my_portf->num_log_entries,
+	  this->my_portf->total_orders);
+
+  fprintf(pFile,"%7.0f %7.0f % 7.0f % 7.0f % 4.0f %4.0f \n",
+	  this->my_portf->GetInitialPrice(),
+	  this->my_portf->GetFinalPrice(),
+	  this->my_portf->GetTotalDeltaPnl(),
+	  this->my_portf->GetTotalPortfolioPnl(),
+	  ((this->my_portf->GetInitialPrice()-this->my_portf->GetFinalPrice())+this->my_portf->GetTotalDeltaPnl())-this->my_portf->GetTotalPortfolioPnl(),
+	  this->my_portf->GetTotalTradedC1Notional()/1.0e6);
+  //
+  fclose(pFile);
+}
+
+bool c_cycle::IfMinYTMRebalancing(const c_quote & myquote){
+  if(this->closetoexpiry){
+    return false;
+  }
+  else{
+    dt * current_dt = new dt(*(myquote.quote_dt));
+    dt * maturity_dt = new dt(this->my_portf->straddle->GetMaturityDate());
+    double ytm = maturity_dt->CalculateNumberOfYears(*current_dt);
+    delete current_dt;
+    delete maturity_dt;
+    current_dt = NULL;
+    maturity_dt = NULL;
+
+    if(ytm < this->my_portf->straddle->GetMinYTM()){
+      this->closetoexpiry=true;
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+}
+
+bool c_cycle::IfSundayRebalancing(const c_quote & myquote){
+  return this->IfSundayRebalancing(*(myquote.quote_dt));
+}
+
+bool c_cycle::IfSundayRebalancing(const dt & mydt){  
+  if((mydt.GetDayOfWeek()==0)&&(this->last_sunday->lt(mydt,true))){
+    if((mydt.GetHour()>=17)&&(mydt.GetMinute()>=0)){
+      delete this->last_sunday;
+      this->last_sunday=NULL;
+      this->last_sunday = new dt(mydt);
+      return true;
+    }
+  }
+  return false;
+}
+
+void c_cycle::CalculateSundaySteps(const c_quote & myquote){
+  dt * current_dt = new dt(*(myquote.quote_dt));
+  double current_spot = (myquote.bid+myquote.offer)*0.5;
+
+  double step_pips_value = this->my_portf->sunday_step_pct * this->my_portf->straddle->GetSpot();
+
+  FXStraddle * existing_straddle = new FXStraddle(*(this->my_portf->straddle));
+  
+  this->my_portf->straddle->UpdateSpotDT(current_spot,*current_dt);
+  this->my_portf->CalculateSteps();
+
+  if(this->my_portf->last_reb_spot+this->my_portf->top_steps[0]<current_spot){
+    this->my_portf->top_steps[0]=step_pips_value;
+    for (int i = 1; i<this->my_portf->num_top_steps;i++){
+      this->my_portf->top_steps[i]=this->my_portf->top_steps[i-1]+step_pips_value;
+    }
+  }
+  else if (this->my_portf->last_reb_spot-this->my_portf->bottom_steps[0]>current_spot){
+    this->my_portf->bottom_steps[0]=step_pips_value;
+    for (int i = 1; i<this->my_portf->num_bottom_steps;i++){
+      this->my_portf->bottom_steps[i]=this->my_portf->bottom_steps[i-1]+step_pips_value;
+    }
+  }
+
+  //this->my_portf->PrintSteps();
+  this->my_portf->CalculateOrders();
+  //this->my_portf->PrintOrders();
+
+  delete this->my_portf->straddle;
+  this->my_portf->straddle=NULL;
+  this->my_portf->straddle = new FXStraddle(*existing_straddle);
+
+  delete current_dt;
+  current_dt=NULL;
+  delete existing_straddle;
+  existing_straddle=NULL;
+}
+
+bool c_cycle::IfFridayRebalancing(const c_quote & myquote){  
+  if((myquote.quote_dt->GetDayOfWeek()==5)&&(this->last_friday->lt(*(myquote.quote_dt),true))){
+    if((myquote.quote_dt->GetHour()>=16)&&(myquote.quote_dt->GetMinute()>=45)){
+      delete this->last_friday;
+      this->last_friday=NULL;
+      this->last_friday = new dt(*(myquote.quote_dt));
+      return true;
+    }
+  }
+  return false;
+}
+
+bool c_cycle::IfFridayRebalancing(const dt & mydt){
+  
+  if((mydt.GetDayOfWeek()==5)&&(this->last_friday->lt(mydt,true))){
+    if((mydt.GetHour()>=16)&&(mydt.GetMinute()>=45)){
+      delete this->last_friday;
+      this->last_friday=NULL;
+      this->last_friday = new dt(mydt);
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string c_cycle::get_filename(std::string dirname){
+  std::string filename = dirname+"/report_";
+  filename+=std::to_string(this->cycle_id)+"_";
+  filename+=this->cycle_start+"_"+this->cycle_end+".txt";
+  return filename;
+}
+
+std::string c_cycle::sql_getcyclequotes(){
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from eurusd_new1 where (";
+  std::string stringB = " (rowid>="+std::to_string(this->minrowid)+" and rowid<="+std::to_string(this->maxrowid)+") AND ";
+  std::string stringC = " ( (quotedate>'"+(this->cycle_start)+"' or (quotedate='"+(this->cycle_start)+"' and quotetime>='10:00:00')) AND ";
+  std::string stringD = " (quotedate<'"+(this->cycle_end)+"' or (quotedate='"+(this->cycle_end)+"' and quotetime<'10:00:00')) ) );";
+
+  return stringA+stringB+stringC+stringD;
+}
+
+std::string sql_getquotesfromrowidrange(unsigned int minrowid, unsigned int maxrowid){
+
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from eurusd_new1 where ";
+  std::string stringB = " (rowid>="+std::to_string(minrowid)+" and rowid<="+std::to_string(maxrowid)+");";
+
+  return stringA+stringB;
+}
+
+void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, double sbid, double sbidsize, double soffer, double soffersize){
+
+  //0.123
+  while(sqms.size()<5){
+    sqms+="0";
+  }  
+  std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
+
+  dt * quote_dt = new dt(datetimems);
+
+  //quote_dt->print();
+  //this->cycle_start_dt->print();
+  //this->cycle_end_dt->print();
+
+  if(!
+     ( (quote_dt->lt(*(this->cycle_start_dt)))
+      ||
+      (quote_dt->gt(*(this->cycle_end_dt))) ) 
+    ){
+
+      if(this->num_quotes+1==this->max_num_quotes){
+	c_quote **temparray = new c_quote*[this->max_num_quotes];
+
+	for(int i = 0; i<this->num_quotes;i++){
+	  temparray[i] = new c_quote(*(this->cycle_quotes[i]));
+	  delete this->cycle_quotes[i];
+	  this->cycle_quotes[i]=NULL;
+	}
+
+	delete[] this->cycle_quotes;
+	this->cycle_quotes=NULL;
+	this->max_num_quotes = 2*this->max_num_quotes;
+	this->cycle_quotes = new c_quote*[this->max_num_quotes];
+
+	for(int i = 0; i<this->num_quotes;i++){
+	  this->cycle_quotes[i] = new c_quote(*(temparray[i]));
+	  delete temparray[i];
+	  temparray[i]=NULL;
+	}
+
+	delete[] temparray;
+	temparray = NULL;
+      }
+
+    this->cycle_quotes[this->num_quotes] = new c_quote(datetimems,sbid,sbidsize,soffer,soffersize);
+    this->num_quotes++;
+  }
+
+  delete quote_dt;
+  quote_dt=NULL;
+}
+
+void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize){
+
+  if(this->num_quotes+1==this->max_num_quotes){
+    c_quote **temparray = new c_quote*[this->max_num_quotes];
+
+    for(int i = 0; i<this->num_quotes;i++){
+      temparray[i] = new c_quote(*(this->cycle_quotes[i]));
+      delete this->cycle_quotes[i];
+    }
+
+    delete[] this->cycle_quotes;
+    this->cycle_quotes=NULL;
+
+    this->max_num_quotes = 2*this->max_num_quotes;
+    this->cycle_quotes = new c_quote*[this->max_num_quotes];
+
+    for(int i = 0; i<this->num_quotes;i++){
+      this->cycle_quotes[i] = new c_quote(*(temparray[i]));
+      delete temparray[i];
+    }
+
+    delete[] temparray;
+    temparray = NULL;
+  }
+
+  //0.123
+  while(sqms.size()<5){
+    sqms+="0";
+  }  
+  std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
+  this->cycle_quotes[this->num_quotes] = new c_quote(datetimems,sbid,sbidsize,soffer,soffersize);
+  this->num_quotes++;
+}
+
+c_cycle::c_cycle(std::string scycle_id, std::string cycle_start, std::string cycle_start_time, std::string cycle_end, std::string cycle_end_time, std::string sstarting_spot, std::string sstrike, std::string sforward, std::string svol, std::string sminrowid, std::string smaxrowid, option_direction my_option_direction, option_ccypair my_option_ccypair, double manual_rebalancing_delta_fraction){
+  this->cycle_id = stoi(scycle_id);
+  this->cycle_start = cycle_start;
+  this->cycle_end = cycle_end;
+  this->manual_rebalancing_delta_fraction = manual_rebalancing_delta_fraction;
+
+  this->cycle_start_dt = new dt(this->cycle_start+" "+cycle_start_time);
+  this->cycle_end_dt = new dt(this->cycle_end+" "+cycle_end_time);
+
+  this->last_friday = new dt("1900-01-01 16:45:00.000");
+  this->last_sunday = new dt("1900-01-01 16:45:00.000");
+
+  this->starting_spot = stod(sstarting_spot);
+  this->forward = stod(sforward);
+  this->vol = stod(svol)*0.01;
+  this->strike = stod(sstrike);
+
+  this->minrowid = stoi(sminrowid);
+  this->maxrowid = stoi(smaxrowid);
+
+  this->cycle_quotes=new c_quote*[this->max_num_quotes];
+
+  this->odir = my_option_direction;
+  this->ocp = my_option_ccypair;
+
+  this->my_portf = new Portfolio();
+}
+
+void c_cycle::load_straddle(double linear_delta_width, double min_ytm){
+  //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp
+  this->my_portf->LoadStraddle(this->strike,this->vol,this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, linear_delta_width, min_ytm);
+}
+
+void c_cycle::delete_all_quotes(){
+    for (int i = 0; i<this->num_quotes; i++){
+      delete this->cycle_quotes[i];
+      this->cycle_quotes[i]=NULL;
+    }
+    delete[] this->cycle_quotes;
+    this->cycle_quotes=NULL;
+    this->num_quotes = 0;
+}
+
+c_cycle::~c_cycle(){
+
+  if(this->num_quotes>0){
+    for (int i = 0; i<this->num_quotes; i++){
+      delete this->cycle_quotes[i];
+      this->cycle_quotes[i]=NULL;
+    }
+    delete[] this->cycle_quotes;
+    this->cycle_quotes=NULL;
+  }
+
+  delete this->my_portf;
+  this->my_portf=NULL;
+
+  delete this->last_friday;
+  delete this->last_sunday;
+}
+
+#endif
