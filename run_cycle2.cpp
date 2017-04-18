@@ -63,7 +63,9 @@ int main(int argc, char **argv){
     con->setSchema(my_params[k]->database_name);
     cout<<"done\n";
 
-    string sql_query_cycles = "SELECT a.cycle_id, a.cycle_start, a.cycle_end, a.starting_spot, a.strike, a.vol_bid, b1.m_minrowid, b2.m_maxrowid from "+my_params[k]->table_name+" as a, eurusd_date_mapping as b1, eurusd_date_mapping as b2 where a.cycle_start=b1.m_date and a.cycle_end=b2.m_date order by a.cycle_id;";
+    //string sql_query_cycles = "SELECT a.cycle_id, a.cycle_start, a.cycle_end, a.starting_spot, a.strike, a.vol_bid, b1.m_minrowid, b2.m_maxrowid from "+my_params[k]->table_name+" as a, eurusd_date_mapping as b1, eurusd_date_mapping as b2 where a.cycle_start=b1.m_date and a.cycle_end=b2.m_date order by a.cycle_id;";
+
+    string sql_query_cycles = my_params[k]->generate_sql_string();
 
     cout<<"loading cycles... ";
     stmt = con->createStatement();
