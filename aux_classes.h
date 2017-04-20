@@ -20,7 +20,8 @@ class c_quote{
  public:
   //volume is adjusted by 1e6 multiple
   c_quote(std::string, std::string, std::string, std::string, std::string);
-  c_quote(std::string datetimems, double, double, double, double);
+  c_quote(std::string, double, double, double, double);
+  c_quote(std::string, std::string, std::string, double, double, double, double);
   c_quote(const c_quote &);
   ~c_quote();
   void printquote();
@@ -42,7 +43,10 @@ class c_cycle{
   bool IfSkipQuote(unsigned int) const;
   void add_quote(std::string, std::string,std::string, std::string, std::string, std::string, std::string);
   void add_quote(std::string, std::string,std::string, double, double,double,double);
+  void add_quote(c_quote *);
+
   void delete_all_quotes();
+  void delete_quotes_array();
 
   void load_straddle(double,double);
 

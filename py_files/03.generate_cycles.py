@@ -91,7 +91,7 @@ def GetEndDate1W(startdate):
 def GetNumberOfDays(start,end):
     return (int(end.strftime("%j")) - int(start.strftime("%j")) + (int(end.year)-int(start.year))*365)
 
-_tenors = ["1w", "1m", "3m"]
+_tenors = ["3m"]
 _ccypair = "eurusd"
 
 if _ccypair=="jpyusd":

@@ -48,6 +48,21 @@ c_quote::c_quote(std::string datetimems, double dbid, double dbidsize, double do
   this->offersize = (doffersize)*1e6;
 }
 
+c_quote::c_quote(std::string sqdate, std::string sqtime, std::string sqms, double dbid, double dbidsize, double doffer, double doffersize){
+
+  //0.123
+  while(sqms.size()<5){
+    sqms+="0";
+  }  
+  std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
+
+  this->quote_dt = new dt(datetimems);
+  this->bid = dbid;
+  this->bidsize = dbidsize*1e6;
+  this->offer = doffer;
+  this->offersize = doffersize*1e6;
+}
+
 c_quote::~c_quote(){
   delete this->quote_dt;
   this->quote_dt = NULL;
@@ -253,7 +268,6 @@ bool c_cycle::IfFridayRebalancing(const c_quote & myquote){
 }
 
 bool c_cycle::IfFridayRebalancing(const dt & mydt){
-  
   if((mydt.GetDayOfWeek()==5)&&(this->last_friday->lt(mydt,true))){
     if((mydt.GetHour()>=16)&&(mydt.GetMinute()>=45)){
       delete this->last_friday;
@@ -282,11 +296,39 @@ std::string c_cycle::sql_getcyclequotes(){
 }
 
 std::string sql_getquotesfromrowidrange(unsigned int minrowid, unsigned int maxrowid){
-
   std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from eurusd_new1 where ";
   std::string stringB = " (rowid>="+std::to_string(minrowid)+" and rowid<="+std::to_string(maxrowid)+");";
-
   return stringA+stringB;
+}
+
+void c_cycle::add_quote(c_quote * pquote){
+  if(!
+     ( (pquote->quote_dt->lt(*(this->cycle_start_dt)))
+      ||
+      (pquote->quote_dt->gt(*(this->cycle_end_dt))) ) 
+    ){
+
+      if(this->num_quotes+1==this->max_num_quotes){
+	c_quote **temparray = new c_quote*[this->max_num_quotes];
+
+	for(int i=0;i<this->num_quotes;i++){
+	  temparray[i] = this->cycle_quotes[i];
+	}
+	delete[] this->cycle_quotes;
+	this->cycle_quotes=NULL;
+
+	this->max_num_quotes = 2*this->max_num_quotes;
+	this->cycle_quotes = new c_quote*[this->max_num_quotes];
+
+	for(int i=0;i<this->num_quotes;i++){
+	  this->cycle_quotes[i] = temparray[i];
+	}
+	delete[] temparray;
+	temparray = NULL;
+      }
+      this->cycle_quotes[this->num_quotes] = pquote; 
+      this->num_quotes++;
+  }
 }
 
 void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, double sbid, double sbidsize, double soffer, double soffersize){
@@ -298,11 +340,6 @@ void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms
   std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
 
   dt * quote_dt = new dt(datetimems);
-
-  //quote_dt->print();
-  //this->cycle_start_dt->print();
-  //this->cycle_end_dt->print();
-
   if(!
      ( (quote_dt->lt(*(this->cycle_start_dt)))
       ||
@@ -328,7 +365,6 @@ void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms
 	  delete temparray[i];
 	  temparray[i]=NULL;
 	}
-
 	delete[] temparray;
 	temparray = NULL;
       }
@@ -342,37 +378,7 @@ void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms
 }
 
 void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize){
-
-  if(this->num_quotes+1==this->max_num_quotes){
-    c_quote **temparray = new c_quote*[this->max_num_quotes];
-
-    for(int i = 0; i<this->num_quotes;i++){
-      temparray[i] = new c_quote(*(this->cycle_quotes[i]));
-      delete this->cycle_quotes[i];
-    }
-
-    delete[] this->cycle_quotes;
-    this->cycle_quotes=NULL;
-
-    this->max_num_quotes = 2*this->max_num_quotes;
-    this->cycle_quotes = new c_quote*[this->max_num_quotes];
-
-    for(int i = 0; i<this->num_quotes;i++){
-      this->cycle_quotes[i] = new c_quote(*(temparray[i]));
-      delete temparray[i];
-    }
-
-    delete[] temparray;
-    temparray = NULL;
-  }
-
-  //0.123
-  while(sqms.size()<5){
-    sqms+="0";
-  }  
-  std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
-  this->cycle_quotes[this->num_quotes] = new c_quote(datetimems,sbid,sbidsize,soffer,soffersize);
-  this->num_quotes++;
+  this->add_quote(sqdate,sqtime,sqms,stod(sbid),stod(sbidsize),stod(soffer),stod(soffersize));
 }
 
 c_cycle::c_cycle(std::string scycle_id, std::string cycle_start, std::string cycle_start_time, std::string cycle_end, std::string cycle_end_time, std::string sstarting_spot, std::string sstrike, std::string sforward, std::string svol, std::string sminrowid, std::string smaxrowid, option_direction my_option_direction, option_ccypair my_option_ccypair, double manual_rebalancing_delta_fraction){
@@ -418,8 +424,13 @@ void c_cycle::delete_all_quotes(){
     this->num_quotes = 0;
 }
 
-c_cycle::~c_cycle(){
+void c_cycle::delete_quotes_array(){
+  delete[] this->cycle_quotes;
+  this->cycle_quotes=NULL;
+  this->num_quotes = 0;
+}
 
+c_cycle::~c_cycle(){
   if(this->num_quotes>0){
     for (int i = 0; i<this->num_quotes; i++){
       delete this->cycle_quotes[i];

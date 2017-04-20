@@ -63,8 +63,6 @@ int main(int argc, char **argv){
     con->setSchema(my_params[k]->database_name);
     cout<<"done\n";
 
-    //string sql_query_cycles = "SELECT a.cycle_id, a.cycle_start, a.cycle_end, a.starting_spot, a.strike, a.vol_bid, b1.m_minrowid, b2.m_maxrowid from "+my_params[k]->table_name+" as a, eurusd_date_mapping as b1, eurusd_date_mapping as b2 where a.cycle_start=b1.m_date and a.cycle_end=b2.m_date order by a.cycle_id;";
-
     string sql_query_cycles = my_params[k]->generate_sql_string();
 
     cout<<"loading cycles... ";
@@ -106,6 +104,10 @@ int main(int argc, char **argv){
     for(int j=0; j<(int)(ceil(num_cycles/((double)super_cycle_num))); j++){
       cout<<"\tsuper cycle "+to_string(j+1)+" of "+to_string(int(ceil(num_cycles/((double)super_cycle_num))))+"\n";
       
+      unsigned int num_quotes = 0;
+      unsigned int max_num_quotes = 1000000; 
+      c_quote **loaded_quotes = new c_quote*[max_num_quotes];
+
       unsigned int minrowid = UINT_MAX;
       unsigned int maxrowid = 0;
 
@@ -119,8 +121,14 @@ int main(int argc, char **argv){
 	}
       }
 
-      string sql_request = sql_getquotesfromrowidrange(minrowid,maxrowid);
-      //cout<<"sql request: "<<sql_request<<endl;
+      string sql_request = "";
+
+      if(super_cycle_num>1){
+	sql_request = sql_getquotesfromrowidrange(minrowid,maxrowid);
+      }
+      else{ //super_cycle_num==1
+	sql_request = my_cycles[j]->sql_getcyclequotes();
+      }
 
       cout<<"\tconnecting to database... ";
       con = driver->connect(my_params[k]->host, my_params[k]->user_name, my_params[k]->password);
@@ -140,18 +148,38 @@ int main(int argc, char **argv){
 	double d6 = res->getDouble("quoteoffer");
 	double d7 = res->getDouble("offervolume");
 
-	for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
-	  my_cycles[j1]->add_quote(s1,s2,s3,d4,d5,d6,d7);
+	if(num_quotes+1==max_num_quotes){
+	  c_quote **temparray = new c_quote*[max_num_quotes];
+
+	  for(int i=0;i<num_quotes;i++){
+	    temparray[i] = loaded_quotes[i];
+	  }
+	  delete[] loaded_quotes;
+	  loaded_quotes=NULL;
+
+	  max_num_quotes = 2*max_num_quotes;
+	  loaded_quotes = new c_quote*[max_num_quotes];
+
+	  for(int i=0;i<num_quotes;i++){
+	    loaded_quotes[i] = temparray[i];
+	  }
+	  delete[] temparray;
+	  temparray = NULL;
 	}
+
+	loaded_quotes[num_quotes]=new c_quote(s1,s2,s3,d4,d5,d6,d7);
+	num_quotes++;
       }
       cout<<"done\n";
-      
-      delete res;
-      delete stmt;
-      delete con;  
-      res = NULL;
-      stmt = NULL;
-      con = NULL;
+
+      delete res; delete stmt; delete con;  
+      res = NULL; stmt = NULL; con = NULL;
+
+      for (int i=0; i<num_quotes;i++){
+	for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
+	  my_cycles[j1]->add_quote(loaded_quotes[i]);
+	}
+      }
 
       for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
 	cout<<"\t\tcycle_id: "<<my_cycles[j1]->cycle_id<<"\n";
@@ -179,7 +207,6 @@ int main(int argc, char **argv){
 	  //last rebalancing:
 	  if(q==my_cycles[j1]->num_quotes-1){
 	    //cout<<"last rebalancing\n";
-	    //my_cycles[j1]->cycle_quotes[q]->printquote();
 	    fill_rate = my_cycles[j1]->my_portf->RebalanceDeltaAtMarket(*(my_cycles[j1]->cycle_quotes[q]),true);
 	    my_cycles[j1]->set_last_quote(fill_rate);
 	    my_cycles[j1]->my_portf->SetFinalPrice(fill_rate);
@@ -194,10 +221,6 @@ int main(int argc, char **argv){
 	  }
 	  else{
 	    bool rebalancing_result = my_cycles[j1]->my_portf->RebalanceDeltaAtOrder(*(my_cycles[j1]->cycle_quotes[q]));
-
-	    // if(rebalancing_result){
-	    //   cout<<"order rebalancing\n";
-	    // }
 
 	    //manual rebalancing at market
 	    if((!rebalancing_result)&&(my_cycles[j1]->IfAdjustOrders(q))){
@@ -216,16 +239,21 @@ int main(int argc, char **argv){
 	cout<<"\t\tappending summary file... ";
 	my_cycles[j1]->WriteToFile(my_params[k]->folder_name+"/00.summary.txt");
 	cout<<" done\n";
-	my_cycles[j1]->delete_all_quotes();
-
-	delete my_cycles[j1];
-	my_cycles[j1]=NULL;
       }
-    }
 
+      for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
+	  my_cycles[j1]->delete_quotes_array();
+      }
+
+      for (int i=0; i<num_quotes; i++){
+	delete loaded_quotes[i];
+	loaded_quotes[i]=NULL;
+      }
+      delete [] loaded_quotes;
+      loaded_quotes=NULL;
+    }
     delete[] my_cycles;
     my_cycles = NULL;
-
   }
 
   for(int k=0;k<argc-1;k++){
