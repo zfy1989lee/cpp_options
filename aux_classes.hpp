@@ -381,6 +381,39 @@ void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms
   this->add_quote(sqdate,sqtime,sqms,stod(sbid),stod(sbidsize),stod(soffer),stod(soffersize));
 }
 
+c_cycle::c_cycle(const c_cycle & my_cycle){
+  
+  this->cycle_id = my_cycle.cycle_id;
+  this->cycle_start = my_cycle.cycle_start;
+  this->cycle_end = my_cycle.cycle_end;
+  this->manual_rebalancing_delta_fraction = my_cycle.manual_rebalancing_delta_fraction;
+
+  this->cycle_start_dt = new dt(*(my_cycle.cycle_start_dt));
+  this->cycle_end_dt = new dt(*(my_cycle.cycle_end_dt));
+
+  this->last_friday = new dt(*(my_cycle.last_friday));
+  this->last_sunday = new dt(*(my_cycle.last_sunday));
+
+  this->starting_spot = my_cycle.starting_spot;
+  this->forward = my_cycle.forward;
+  this->vol = my_cycle.vol;
+  this->strike = my_cycle.strike;
+
+  this->minrowid = my_cycle.minrowid;
+  this->maxrowid = my_cycle.maxrowid;
+  
+  this->num_quotes=my_cycle.num_quotes;
+  this->cycle_quotes=new c_quote*[my_cycle.max_num_quotes];
+  for(int i=0;i<my_cycle.num_quotes;i++){
+    this->cycle_quotes[i]=my_cycle.cycle_quotes[i];
+  }
+
+  this->odir = my_cycle.odir;
+  this->ocp = my_cycle.ocp;
+
+  this->my_portf = new Portfolio();
+}
+
 c_cycle::c_cycle(std::string scycle_id, std::string cycle_start, std::string cycle_start_time, std::string cycle_end, std::string cycle_end_time, std::string sstarting_spot, std::string sstrike, std::string sforward, std::string svol, std::string sminrowid, std::string smaxrowid, option_direction my_option_direction, option_ccypair my_option_ccypair, double manual_rebalancing_delta_fraction){
   this->cycle_id = stoi(scycle_id);
   this->cycle_start = cycle_start;

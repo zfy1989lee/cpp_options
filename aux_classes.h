@@ -35,9 +35,12 @@ class c_quote{
 class c_cycle{
  public:
   c_cycle(std::string, std::string,std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string, option_direction, option_ccypair, double);
+  c_cycle(const c_cycle &);
   ~c_cycle();
 
   void WriteToFile(std::string);
+
+  c_cycle * CopyCycle(const c_cycle &);
 
   bool IfAdjustOrders(unsigned int);
   bool IfSkipQuote(unsigned int) const;

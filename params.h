@@ -19,7 +19,9 @@ class c_params{
   int starting_cycle;
   int ending_cycle;
 
-  unsigned int threshold;
+  int * thresholds;
+  int num_thresholds=0;
+  
   unsigned int num_cycles;
   double linear_delta_width;
   double min_ytm;
@@ -73,8 +75,32 @@ c_params::c_params(std::string conf_file){
     fscanf(pFile,"%s\n",line);
     this->ending_cycle = std::stoi(std::string(line));
 
-    fscanf(pFile,"%s\n",line);
-    this->threshold = std::stoi(std::string(line));
+    //fscanf(pFile,"%s\n",line);
+    //this->threshold = std::stoi(std::string(line));
+
+    thresholds = new int[100];
+
+    fgets(line,sizeof(line),pFile);
+    std::string str_thresholds = std::string(line);
+
+    int prev_first_pos = 0;
+    int first_pos = str_thresholds.find(" ",prev_first_pos); 
+
+    while(first_pos!=std::string::npos){
+      thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos));
+      num_thresholds++;
+      prev_first_pos = first_pos+1;
+      first_pos = str_thresholds.find(" ",prev_first_pos);
+    }
+
+    if(prev_first_pos!=str_thresholds.size()-1){
+      thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos));
+      num_thresholds++;
+    }
+
+    /* for(int j=0;j<num_thresholds;j++){ */
+    /*   std::cout<<"j"<<j<<" "<<thresholds[j]<<"\n"; */
+    /* } */
 
     fscanf(pFile,"%s\n",line);
     this->num_cycles = std::stoi(std::string(line));
@@ -110,5 +136,7 @@ c_params::c_params(std::string conf_file){
   }
 }
 
-c_params::~c_params(){}
-
+c_params::~c_params(){
+  delete[] thresholds;
+  thresholds=NULL;
+}

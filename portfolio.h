@@ -21,9 +21,9 @@ class Portfolio {
  public:
   friend class log_entry;
   friend class c_cycle;
-  Portfolio(const FXStraddle & );
+  Portfolio(const FXStraddle &);
   Portfolio();
-  ~Portfolio(); // to do: make sure all pointers are deleted!!
+  ~Portfolio(); 
 
   void LoadStraddle(const FXStraddle & );
   void LoadStraddle(double, double, double, double, double, dt, dt, option_direction, option_ccypair, double, double);

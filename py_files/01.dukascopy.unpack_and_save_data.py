@@ -24,10 +24,10 @@ def LoadLastQuoteFromDB(ccypair):
    #utc_tz = timezone('UTC')
    #utc_datetime = utc_tz.localize(mydatetime)
 
-   if(results_array!=None):
+   if(result_array!=None):
       return ConvertTwoStringsIntoDateTime(str(result_array[0]),str(result_array[1]))
    else:
-      return ConvertTwoStringsIntoDateTime(str("1990-01-01"),str("10:00:00"))
+      return ConvertTwoStringsIntoDateTime(str("1900-01-01"),str("10:00:00"))
 
 def ParseString(mystr):
    mystr=mystr.replace('\n','')
@@ -53,14 +53,10 @@ def ParseString(mystr):
    return (utc_datetime.strftime("%Y-%m-%d"),utc_datetime.strftime("%H:%M:%S"),eastern_datetime.strftime("%Y-%m-%d"),eastern_datetime.strftime("%H:%M:%S"),myms,mybid,myoffer,mybidvol,myoffervol)
 
 
-ccy1 = "USD"
-ccy2 = "JPY"
-ccypair = ccy1+ccy2
+ccypair = "usdjpy"
+tofolder = r"../dukascopy_data/"
 
-tofolder = r"../cpp_options_data/dukascopy_data/"
-
-files = ["USDJPY_UTC_Ticks_Bid_2008.12.31_2011.01.10.csv",""]
-#files = ["EURUSD_UTC_Ticks_Bid_2016.01.01_2017.04.12.csv"]
+files = ["USDJPY_UTC_Ticks_Bid_2008.12.31_2011.01.10.csv","USDJPY_UTC_Ticks_Bid_2011.01.01_2013.01.07.csv","USDJPY_UTC_Ticks_Bid_2013.01.01_2015.01.05.csv","USDJPY_UTC_Ticks_Bid_2015.01.01_2017.04.13.csv"]
 
 for filename in files:
 
@@ -100,4 +96,3 @@ for filename in files:
    print("loaded the file successfully")
    myconn.commit()
    myconn.close()
-

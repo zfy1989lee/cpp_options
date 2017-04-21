@@ -44,13 +44,14 @@ int main(int argc, char **argv){
     my_params[k] = new c_params(argv[k+1]);
     cout<<"done\n";
 
-    cout<<"preparing directory "+my_params[k]->folder_name+"... ";
-
-
-    if(stat(my_params[k]->folder_name.c_str(),&st)!=0){
-      system(("mkdir "+my_params[k]->folder_name).c_str());
+    for(int j2=0;j2<my_params[k]->num_thresholds;j2++){
+      string dirname = my_params[k]->folder_name+"_"+to_string(my_params[k]->thresholds[j2]);
+      cout<<"preparing directory "+dirname+" ...";
+      if(stat(dirname.c_str(),&st)!=0){
+	system(("mkdir "+dirname).c_str());
+      }
+      cout<<"done\n";
     }
-    cout<<"done\n";
 
     cout<<"connecting to database... ";
     sql::Driver *driver;
@@ -92,12 +93,8 @@ int main(int argc, char **argv){
     //cout<<"loading cycles... ";
     cout<<"done\n";
 
-    delete res;
-    delete stmt;
-    delete con;  
-    res = NULL;
-    stmt = NULL;
-    con = NULL;
+    delete res;    delete stmt;    delete con;  
+    res = NULL;    stmt = NULL;    con = NULL;
 
     int super_cycle_num = my_params[k]->num_cycles;
 
@@ -122,7 +119,6 @@ int main(int argc, char **argv){
       }
 
       string sql_request = "";
-
       if(super_cycle_num>1){
 	sql_request = sql_getquotesfromrowidrange(minrowid,maxrowid);
       }
@@ -184,65 +180,76 @@ int main(int argc, char **argv){
       for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
 	cout<<"\t\tcycle_id: "<<my_cycles[j1]->cycle_id<<"\n";
 	cout<<"\t\tnum quotes: "<<my_cycles[j1]->num_quotes<<"\n";
+
+	for (int j2=0; j2<my_params[k]->num_thresholds;j2++){
+	  cout<<"\t\t\tthreshold: "<<my_params[k]->thresholds[j2]<<"\n";
+
+	  string dirname = my_params[k]->folder_name+"_"+to_string(my_params[k]->thresholds[j2]);
+
+	  c_cycle * t_cycle = new c_cycle (*(my_cycles[j1]));
 	
-	//load straddle
-	my_cycles[j1]->load_straddle(my_params[k]->linear_delta_width, my_params[k]->min_ytm);
-	my_cycles[j1]->my_portf->SetThreshold(my_params[k]->threshold);
+	  //load straddle
+	  t_cycle->load_straddle(my_params[k]->linear_delta_width, my_params[k]->min_ytm);
+	  t_cycle->my_portf->SetThreshold(my_params[k]->thresholds[j2]);
 
-	//first rebalancing
-	// cout<<"first rebalancing\n";
-	double fill_rate = my_cycles[j1]->my_portf->RebalanceDeltaAtMarket(*(my_cycles[j1]->cycle_quotes[0]));
-	my_cycles[j1]->set_first_quote(fill_rate);
+	  //first rebalancing
+	  // cout<<"first rebalancing\n";
+	  double fill_rate = t_cycle->my_portf->RebalanceDeltaAtMarket(*(t_cycle->cycle_quotes[0]));
+	  t_cycle->set_first_quote(fill_rate);
 
-	for(int q = 1; q<my_cycles[j1]->num_quotes;q++){
+	  for(int q = 1; q<t_cycle->num_quotes;q++){
 
-	  if(my_cycles[j1]->IfSkipQuote(q)){
-	    continue;
-	  }
+	    if(t_cycle->IfSkipQuote(q)){
+	      continue;
+	    }
 
-	  bool condA = my_cycles[j1]->IfFridayRebalancing(*(my_cycles[j1]->cycle_quotes[q]));
-	  bool condB = my_cycles[j1]->IfSundayRebalancing(*(my_cycles[j1]->cycle_quotes[q]));
-	  bool condC = my_cycles[j1]->IfMinYTMRebalancing(*(my_cycles[j1]->cycle_quotes[q]));
+	    bool condA = t_cycle->IfFridayRebalancing(*(t_cycle->cycle_quotes[q]));
+	    bool condB = t_cycle->IfSundayRebalancing(*(t_cycle->cycle_quotes[q]));
+	    bool condC = t_cycle->IfMinYTMRebalancing(*(t_cycle->cycle_quotes[q]));
 
-	  //last rebalancing:
-	  if(q==my_cycles[j1]->num_quotes-1){
-	    //cout<<"last rebalancing\n";
-	    fill_rate = my_cycles[j1]->my_portf->RebalanceDeltaAtMarket(*(my_cycles[j1]->cycle_quotes[q]),true);
-	    my_cycles[j1]->set_last_quote(fill_rate);
-	    my_cycles[j1]->my_portf->SetFinalPrice(fill_rate);
-	  }
-	  else if(condB){
-	    //cout<<"Sunday rebalancing\n";
-	    my_cycles[j1]->CalculateSundaySteps(*(my_cycles[j1]->cycle_quotes[q]));
-	  }
-	  else if(condA||condC){
-	    //cout<<"condA or condC rebalancing\n";
-	    my_cycles[j1]->my_portf->RebalanceDeltaAtMarket(*(my_cycles[j1]->cycle_quotes[q]));
-	  }
-	  else{
-	    bool rebalancing_result = my_cycles[j1]->my_portf->RebalanceDeltaAtOrder(*(my_cycles[j1]->cycle_quotes[q]));
+	    //last rebalancing:
+	    if(q==t_cycle->num_quotes-1){
+	      //cout<<"last rebalancing\n";
+	      fill_rate = t_cycle->my_portf->RebalanceDeltaAtMarket(*(t_cycle->cycle_quotes[q]),true);
+	      t_cycle->set_last_quote(fill_rate);
+	      t_cycle->my_portf->SetFinalPrice(fill_rate);
+	    }
+	    else if(condB){
+	      //cout<<"Sunday rebalancing\n";
+	      t_cycle->CalculateSundaySteps(*(t_cycle->cycle_quotes[q]));
+	    }
+	    else if(condA||condC){
+	      //cout<<"condA or condC rebalancing\n";
+	      t_cycle->my_portf->RebalanceDeltaAtMarket(*(t_cycle->cycle_quotes[q]));
+	    }
+	    else{
+	      bool rebalancing_result = t_cycle->my_portf->RebalanceDeltaAtOrder(*(t_cycle->cycle_quotes[q]));
 
-	    //manual rebalancing at market
-	    if((!rebalancing_result)&&(my_cycles[j1]->IfAdjustOrders(q))){
-	      // cout<<"manual rebalancing\n";
-	      my_cycles[j1]->my_portf->RebalanceDeltaAtMarket(*(my_cycles[j1]->cycle_quotes[q]));
+	      //manual rebalancing at market
+	      if((!rebalancing_result)&&(t_cycle->IfAdjustOrders(q))){
+		// cout<<"manual rebalancing\n";
+		t_cycle->my_portf->RebalanceDeltaAtMarket(*(t_cycle->cycle_quotes[q]));
+	      }
 	    }
 	  }
+
+	  cout<<"\t\t\tnum rebalancings : "<<t_cycle->my_portf->GetNumLogEntries()<<"\n";
+
+	  cout<<"\t\t\tsaving results to "<<t_cycle->get_filename(dirname)<<" ";
+	  t_cycle->my_portf->WriteToFile(t_cycle->get_filename(dirname));
+	  cout<<"done\n";
+
+	  cout<<"\t\t\tappending summary file... ";
+	  t_cycle->WriteToFile(dirname+"/00.summary.txt");
+	  cout<<" done\n";
+
+	  t_cycle->delete_quotes_array();
+	  delete t_cycle;
+	  t_cycle=NULL;
 	}
-
-	cout<<"\t\tnum rebalancings : "<<my_cycles[j1]->my_portf->GetNumLogEntries()<<"\n";
-
-	cout<<"\t\tsaving results to "<<my_cycles[j1]->get_filename(my_params[k]->folder_name)<<" ";
-	my_cycles[j1]->my_portf->WriteToFile(my_cycles[j1]->get_filename(my_params[k]->folder_name));
-	cout<<"done\n";
-
-	cout<<"\t\tappending summary file... ";
-	my_cycles[j1]->WriteToFile(my_params[k]->folder_name+"/00.summary.txt");
-	cout<<" done\n";
-      }
-
-      for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
-	  my_cycles[j1]->delete_quotes_array();
+	my_cycles[j1]->delete_quotes_array();
+	delete my_cycles[j1];
+	my_cycles[j1]=NULL;
       }
 
       for (int i=0; i<num_quotes; i++){
