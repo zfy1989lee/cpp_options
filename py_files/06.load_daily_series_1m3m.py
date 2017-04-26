@@ -19,7 +19,7 @@ def LoadCyclesThatStartOnGivenWeekday(ccypair, optiontenor, weekday):
     return results
 
 ccypairs = ["eurusd"]
-tenors = ["1m"]
+tenors = ["3m"]
 thresholds = [100,500,1000,2500,5000]
 
 divider = 20
