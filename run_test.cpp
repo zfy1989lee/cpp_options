@@ -86,7 +86,7 @@ int main(int argc, char **argv){
       string minrowid = res->getString(7);
       string maxrowid = res->getString(8);
 
-      my_cycles[num_cycles] = new c_cycle(cycle_id,cycle_start,"10:00:00.000",cycle_end,"10:00:00.000",start_quote,strike,forward,vol,minrowid,maxrowid,sell,XXXUSD,my_params[k]->manual_rebalancing_delta_fraction);
+      my_cycles[num_cycles] = new c_cycle(cycle_id,cycle_start,"10:00:00.000",cycle_end,"10:00:00.000",start_quote,strike,forward,vol,minrowid,maxrowid,sell,my_params[k]->ccypair,my_params[k]->manual_rebalancing_delta_fraction);
       num_cycles++;
     }
 
@@ -120,10 +120,10 @@ int main(int argc, char **argv){
 
       string sql_request = "";
       if(super_cycle_num>1){
-	sql_request = sql_getquotesfromrowidrange(minrowid,maxrowid);
+	sql_request = sql_getquotesfromrowidrange(my_params[k]->quotes_table_name,minrowid,maxrowid);
       }
       else{ //super_cycle_num==1
-	sql_request = my_cycles[j]->sql_getcyclequotes();
+	sql_request = my_cycles[j]->sql_getcyclequotes(my_params[k]->quotes_table_name);
       }
 
       cout<<"\tconnecting to database... ";

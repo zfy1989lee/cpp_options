@@ -167,7 +167,7 @@ void c_cycle::WriteToFile(std::string filename){
 	  this->my_portf->hit_orders+this->my_portf->market_orders-this->my_portf->num_log_entries,
 	  this->my_portf->total_orders);
 
-  fprintf(pFile,"%7.0f %7.0f % 7.0f % 7.0f % 4.0f %4.0f \n",
+  fprintf(pFile,"%7.0f %7.0f % 7.0f % 7.0f % 4.0f %4.0f\n",
 	  this->my_portf->GetInitialPrice(),
 	  this->my_portf->GetFinalPrice(),
 	  this->my_portf->GetTotalDeltaPnl(),
@@ -286,19 +286,20 @@ std::string c_cycle::get_filename(std::string dirname){
   return filename;
 }
 
-std::string c_cycle::sql_getcyclequotes(){
-  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from eurusd_new1 where (";
-  std::string stringB = " (rowid>="+std::to_string(this->minrowid)+" and rowid<="+std::to_string(this->maxrowid)+") AND ";
+std::string c_cycle::sql_getcyclequotes(std::string tablename){
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from ";
+
+  std::string stringB = " where ( (rowid>="+std::to_string(this->minrowid)+" and rowid<="+std::to_string(this->maxrowid)+") AND ";
   std::string stringC = " ( (quotedate>'"+(this->cycle_start)+"' or (quotedate='"+(this->cycle_start)+"' and quotetime>='10:00:00')) AND ";
   std::string stringD = " (quotedate<'"+(this->cycle_end)+"' or (quotedate='"+(this->cycle_end)+"' and quotetime<'10:00:00')) ) );";
 
-  return stringA+stringB+stringC+stringD;
+  return stringA+tablename+stringB+stringC+stringD;
 }
 
-std::string sql_getquotesfromrowidrange(unsigned int minrowid, unsigned int maxrowid){
-  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from eurusd_new1 where ";
-  std::string stringB = " (rowid>="+std::to_string(minrowid)+" and rowid<="+std::to_string(maxrowid)+");";
-  return stringA+stringB;
+std::string sql_getquotesfromrowidrange(std::string tablename, unsigned int minrowid, unsigned int maxrowid){
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from ";
+  std::string stringB = " where (rowid>="+std::to_string(minrowid)+" and rowid<="+std::to_string(maxrowid)+");";
+  return stringA+tablename+stringB;
 }
 
 void c_cycle::add_quote(c_quote * pquote){

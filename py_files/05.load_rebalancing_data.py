@@ -33,7 +33,7 @@ def LoadTxtFile(filename):
 insert_into_cols = "(reb_cycle_id,reb_date,reb_time,reb_spot,reb_spot_chg_pips,reb_step_pips,reb_slippage_pips,reb_no_orders_hit,reb_delta_hedge,reb_unhedged_delta,reb_delta_pnl,reb_total_delta_pnl,reb_option_price_change,reb_portfolio_pnl,reb_total_portfolio_pnl,reb_delta,reb_gamma,reb_theta,reb_xgamma,option_price,threshold)"
 
 ccypairs = ["eurusd"]
-tenors = ["1w","1m"]
+tenors = ["3m"]
 thresholds = [100,500,1000,2500,5000]
 
 for ccypair in ccypairs:

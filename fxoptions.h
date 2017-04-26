@@ -8,7 +8,7 @@
 
 enum option_type {put=0, call=1};
 enum option_direction {buy=1, sell=-1};
-enum option_ccypair {XXXUSD, USDXXX}; // EURUSD and USDJPY
+enum option_ccypair {XXXUSD=0, USDXXX=1}; // EURUSD and USDJPY
 
 class fxopt{
  public:
@@ -163,14 +163,14 @@ double fxopt::GetUSDVega(double change) const{
   if(this->ccypair==XXXUSD)
     return this->vega_c2*change;
   else
-    return this->vega_c1*change;
+    return this->vega_c2*change/this->spot;
 }
 
 double fxopt::GetUSDTheta(double change) const{
   if(this->ccypair==XXXUSD)
     return this->theta_c2*change;
   else
-    return this->theta_c1*change;    
+    return this->theta_c2*change/this->spot;    
 }
 
 double fxopt::GetUSDDelta(double change) const{

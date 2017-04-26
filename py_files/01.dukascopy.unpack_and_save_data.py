@@ -24,7 +24,7 @@ def LoadLastQuoteFromDB(ccypair):
    #utc_tz = timezone('UTC')
    #utc_datetime = utc_tz.localize(mydatetime)
 
-   if(result_array!=None):
+   if((result_array[0]!=None) and (result_array[1]!=None)):
       return ConvertTwoStringsIntoDateTime(str(result_array[0]),str(result_array[1]))
    else:
       return ConvertTwoStringsIntoDateTime(str("1900-01-01"),str("10:00:00"))
@@ -56,7 +56,11 @@ def ParseString(mystr):
 ccypair = "usdjpy"
 tofolder = r"../dukascopy_data/"
 
-files = ["USDJPY_UTC_Ticks_Bid_2008.12.31_2011.01.10.csv","USDJPY_UTC_Ticks_Bid_2011.01.01_2013.01.07.csv","USDJPY_UTC_Ticks_Bid_2013.01.01_2015.01.05.csv","USDJPY_UTC_Ticks_Bid_2015.01.01_2017.04.13.csv"]
+#files = ["USDJPY_UTC_Ticks_Bid_2008.12.31_2011.01.10.csv","USDJPY_UTC_Ticks_Bid_2011.01.01_2013.01.07.csv","USDJPY_UTC_Ticks_Bid_2013.01.01_2015.01.05.csv"]
+
+#files = ["USDJPY_UTC_Ticks_Bid_2015.01.01_2017.04.13.csv"]
+
+files = ["USDJPY_2015_2017aa","USDJPY_2015_2017ab","USDJPY_2015_2017ac","USDJPY_2015_2017ad"]
 
 for filename in files:
 
@@ -69,17 +73,34 @@ for filename in files:
    print("finished loading ",filename)
 
    counter = 0
+   if_skip_quotes = True
+
    mysql_orders = []
-   for i in range(1,len(mystringsarray)):
+   range_start = 0
+
+   if(mystringsarray[0].find("Time")!=-1):
+      range_start=1
+
+   print("starting parsing the file from ",range_start," line")
+
+   for i in range(range_start,len(mystringsarray)):
       counter+=1
+
       myline = mystringsarray[i]
-      myline=myline.replace("\n","")
+      #myline = myline.replace("\n","")
 
       (utc_date,utc_time,eastern_date,eastern_time,myms,mybid,myoffer,mybidvol,myoffervol) = ParseString(myline)
-      current_utc_datetime = ConvertTwoStringsIntoDateTime(str(utc_date),str(utc_time))
 
-      if(utc_datetime<current_utc_datetime):
+      if(if_skip_quotes):
+         current_utc_datetime = ConvertTwoStringsIntoDateTime(str(utc_date),str(utc_time))
+         if(utc_datetime<current_utc_datetime):
+            if_skip_quotes=False
+
+      if(not if_skip_quotes):
+
          mysql_orders.append(r"insert into %s_new1 (quotedate, quotetime, quotems, quotebid, quoteoffer, utc_quotedate, utc_quotetime,bidvolume,offervolume) VALUES ('%s','%s',%s,%s,%s,'%s','%s',%s,%s)" % (ccypair.lower(),eastern_date,eastern_time,myms,mybid,myoffer,utc_date,utc_time,mybidvol,myoffervol))
+
+   del mystringsarray
 
    print("total rows in file ",counter)
    print("total rows to add  ",len(mysql_orders))
@@ -93,6 +114,9 @@ for filename in files:
    for mysql_order in mysql_orders:
       mycursor.execute(mysql_order)
 
-   print("loaded the file successfully")
+   print("loaded execute instructions successfully")
    myconn.commit()
    myconn.close()
+
+   del mysql_orders
+

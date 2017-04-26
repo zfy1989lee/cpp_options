@@ -33,7 +33,11 @@ _JPY_texts_2013 = ("2013-01-01", "2013-01-14", "2013-02-11", "2013-03-20", "2013
 _JPY_texts_2014 = ("2014-01-01", "2014-01-13", "2014-02-11", "2014-03-21", "2014-04-29", "2014-05-03", "2014-05-05", "2014-05-06", "2014-07-21", "2014-09-15", "2014-09-23", "2014-10-13", "2014-11-03", "2014-11-24", "2014-12-23")
 _JPY_texts_2015 = ("2015-01-01", "2015-01-12", "2015-02-11", "2015-03-21", "2015-04-29", "2015-05-03", "2015-05-04", "2015-05-05", "2015-05-06", "2015-07-20", "2015-09-21", "2015-09-22", "2015-09-23", "2015-10-12", "2015-11-03", "2015-11-23", "2015-12-23")
 
-_JPY_texts = _JPY_texts_2010+_JPY_texts_2011+_JPY_texts_2012+_JPY_texts_2013+_JPY_texts_2014+_JPY_texts_2015
+_JPY_texts_2016 = ("2016-01-01", "2016-01-11", "2016-02-11", "2016-03-21","2016-03-25", "2016-04-29", "2016-05-03", "2016-05-04", "2016-05-05", "2016-07-18", "2016-08-11", "2016-09-19", "2016-09-22", "2016-10-10", "2016-11-03", "2016-11-23", "2016-12-23", "2016-12-26")
+_JPY_texts_2017 = ("2017-01-02", "2017-01-03", "2017-01-09", "2017-03-20", "2017-04-14", "2017-05-03", "2017-05-04", "2017-05-05", "2017-07-17","2017-08-11", "2017-09-18", "2017-10-09", "2017-11-03", "2017-11-23", "2017-12-25")
+
+
+_JPY_texts = _JPY_texts_2010+_JPY_texts_2011+_JPY_texts_2012+_JPY_texts_2013+_JPY_texts_2014+_JPY_texts_2015+_JPY_texts_2016+_JPY_texts_2017
 _JPY_hols = []
 
 for _text in _JPY_texts:
@@ -91,10 +95,10 @@ def GetEndDate1W(startdate):
 def GetNumberOfDays(start,end):
     return (int(end.strftime("%j")) - int(start.strftime("%j")) + (int(end.year)-int(start.year))*365)
 
-_tenors = ["3m"]
-_ccypair = "eurusd"
+_tenors = ["1w"]
+_ccypair = "usdjpy"
 
-if _ccypair=="jpyusd":
+if _ccypair=="usdjpy":
    _holidays = _JPY_hols + _US_holidays_2009 + _US_holidays_2010 + _US_holidays_2011 + _US_holidays_2012 + _US_holidays_2013 + _US_holidays_2014 + _US_holidays_2015 + _US_holidays_2016 + _US_holidays_2017
 elif _ccypair=="eurusd":
    _holidays = _ECB_holidays_2009 + _ECB_holidays_2010 + _ECB_holidays_2011 + _ECB_holidays_2012 + _ECB_holidays_2013 + _ECB_holidays_2014 + _ECB_holidays_2015 + _ECB_holidays_2016 + _ECB_holidays_2017 + _US_holidays_2009 + _US_holidays_2010 + _US_holidays_2011 + _US_holidays_2012 + _US_holidays_2013 + _US_holidays_2014 + _US_holidays_2015 + _US_holidays_2016 + _US_holidays_2017
@@ -106,25 +110,26 @@ for _tenor in _tenors:
 
    cur.execute("SELECT max(cycle_start) from %s_%s_cycles" % (_ccypair,_tenor))
    results=cur.fetchone()
-   startdate=datetime(2010,1,1)
-
-   print(results[0])
 
    if (results[0]!=None):
       startdate = datetime.strptime(str(results[0]),"%Y-%m-%d")
       startdate = startdate+timedelta(1)
+   else:
+      startdate=datetime(2010,1,1)
+
+   print("start date ",startdate)
 
    cur.execute("SELECT max(quotedate) from %s_new1" % (_ccypair))
    results=cur.fetchone()
    enddate = datetime.strptime(str(results[0]),"%Y-%m-%d")
 
-
    cur.execute("SELECT max(cycle_id) from %s_%s_cycles" % (_ccypair,_tenor))
    results=cur.fetchone()
-   cycle_id = 1
    
    if (results[0]!=None):
       cycle_id = int(str(results[0]))+1
+   else:
+      cycle_id = 1
 
    tempstart = startdate
    tempdate = startdate

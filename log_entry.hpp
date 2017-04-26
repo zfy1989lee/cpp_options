@@ -36,7 +36,8 @@ log_entry::log_entry(const Portfolio & myportf){
     FXStraddle * prev_straddle = new FXStraddle(*(myportf.log_entries[myportf.num_log_entries-1]->straddle));
 
     double spot_chg = (this->reb_spot-myportf.log_entries[myportf.num_log_entries-1]->reb_spot);
-    this->reb_spot_change_pips = spot_chg*10000;
+
+    this->reb_spot_change_pips = spot_chg * myportf.fx_mult;
     
     if(straddle->GetOptionCcyPair()==XXXUSD){
       this->reb_delta_pnl = myportf.log_entries[myportf.num_log_entries-1]->reb_delta_hedge * spot_chg;

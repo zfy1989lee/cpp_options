@@ -56,8 +56,8 @@ class c_cycle{
   void set_first_quote(double x){this->first_quote=x;}
   void set_last_quote(double x){this->last_quote=x;}
 
-  std::string sql_getcyclequotes();
-  std::string sql_getquotesfromrowidrange(unsigned int, unsigned int);
+  std::string sql_getcyclequotes(std::string);
+  std::string sql_getquotesfromrowidrange(std::string,unsigned int, unsigned int);
   std::string get_filename(std::string);
 
   unsigned int get_minrowid(){return this->minrowid;}
