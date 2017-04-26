@@ -16,6 +16,8 @@ class c_params{
   std::string quotes_table_name;
   std::string mapping_table_name;
 
+  option_ccypair ccypair;
+
   int starting_cycle;
   int ending_cycle;
 
@@ -130,6 +132,13 @@ c_params::c_params(std::string conf_file){
     }
 
     this->folder_name = "reports/"+this->folder_name;
+    
+    if(this->quotes_table_name.substr(0,3)=="usd"){
+      this->ccypair = USDXXX;
+    }
+    else if (this->quotes_table_name.substr(3,3)=="usd"){
+      this->ccypair = XXXUSD;
+    }
   }
   else{
     std::cout<<("Cannot open file "+conf_file)<<std::endl;

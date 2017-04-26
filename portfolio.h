@@ -77,6 +77,7 @@ class Portfolio {
   double max_step_pct = 1.15/100;
   double sunday_step_pct = 0.039/100;
   double USDthreshold=500.0;
+  double fx_mult = 10000.0;
 
   double *top_steps = NULL;
   double *bottom_steps = NULL;

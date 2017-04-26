@@ -16,6 +16,13 @@
 Portfolio::Portfolio(const FXStraddle & mystraddle){
   this->straddle = new FXStraddle(mystraddle);
   this->log_entries = new log_entry*[this->max_num_log_entries];
+
+  if(this->straddle->GetOptionCcyPair()==XXXUSD){
+    this->fx_mult=10000.0;
+  }
+  else{
+    this->fx_mult=100.0;
+  }
 }
 
 Portfolio::Portfolio(){
@@ -125,6 +132,13 @@ void Portfolio::LoadStraddle(const FXStraddle & mystraddle){
   if(this->straddle!=NULL){delete this->straddle;} 
   this->straddle = new FXStraddle(mystraddle);
   this->initial_price = this->straddle->GetUSDPrice();
+  
+  if(this->straddle->GetOptionCcyPair()==XXXUSD){
+    this->fx_mult=10000.0;
+  }
+  else{
+    this->fx_mult=100.0;
+  }
 }
 
 //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp, double, double
@@ -132,6 +146,13 @@ void Portfolio::LoadStraddle(double K, double V, double S, double F, double noti
   if(this->straddle!=NULL){delete this->straddle;} 
   this->straddle = new FXStraddle(K,V,S,F,notional,mat,cur,odir,ocp, linear_delta_width,min_ytm);
   this->initial_price = this->straddle->GetUSDPrice();
+
+  if(this->straddle->GetOptionCcyPair()==XXXUSD){
+    this->fx_mult=10000.0;
+  }
+  else{
+    this->fx_mult=100.0;
+  }
 }
 
 void Portfolio::SetThreshold(double threshold){
@@ -245,7 +266,7 @@ bool Portfolio::RebalanceDeltaAtOrder(const dt & qtime, const double bid, const 
     }
 
     this->last_num_orders_hit = num_hit_orders;
-    this->last_slippage_pips = volslippage*10000.0;
+    this->last_slippage_pips = volslippage*this->fx_mult;
     this->last_reb_delta_hedge+=traded_delta;
     this->last_reb_spot = fill_rate;
     delete this->last_reb_dt;
@@ -319,7 +340,7 @@ double Portfolio::RebalanceDeltaAtMarket(const dt & qtime, const double bid, con
   }
 
   this->last_num_orders_hit=1;
-  this->last_slippage_pips = slippage * 10000.0;
+  this->last_slippage_pips = slippage * this->fx_mult;
   this->last_reb_delta_hedge+=traded_delta;
   this->last_reb_spot = fill_rate;
   delete this->last_reb_dt;
@@ -610,7 +631,7 @@ void Portfolio::CalculateSteps(){
   else if(this->num_bottom_steps>0)
     this->last_reb_step = this->bottom_steps[0];
 
-  this->last_reb_step_pips = this->last_reb_step*10000;
+  this->last_reb_step_pips = this->last_reb_step*this->fx_mult;
 }
 
 double Portfolio::GetStepValue(double USDthreshold, double USDgamma, double max_step) {
