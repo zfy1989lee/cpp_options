@@ -41,7 +41,7 @@ class FXStraddle{
   double GetUSDDelta(double step) const {return (this->portf[0]->GetUSDDelta(step)+this->portf[1]->GetUSDDelta(step));}
   double GetUSDGamma(double step) const {return (this->portf[0]->GetUSDGamma(step)+this->portf[1]->GetUSDGamma(step));}
   double GetUSDGammaForStepCalculation() const {return (this->portf[0]->GetUSDGammaForStepCalculation()+this->portf[1]->GetUSDGammaForStepCalculation());}
-  double GetUSDSpeed(double step) const {return (this->portf[0]->GetUSDSpeed(step)+this->portf[1]->GetUSDSpeed(step));}
+  //double GetUSDSpeed(double step) const {return (this->portf[0]->GetUSDSpeed(step)+this->portf[1]->GetUSDSpeed(step));}
   double GetDeltaC1Amount() const {return (this->portf[0]->GetDeltaC1Amount()+this->portf[1]->GetDeltaC1Amount());}
 
   void PrintParams() const;

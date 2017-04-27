@@ -27,8 +27,8 @@ class fxopt{
   double GetUSDDelta(double) const;
   double GetUSDGamma(double) const;
   double GetUSDGammaForStepCalculation() const;
-  double GetUSDSpeed(double) const;
-  double GetDeltaC1Amount() const {return this->notional_c1*this->delta;}
+  //double GetUSDSpeed(double) const;
+  double GetDeltaC1Amount() const; 
 
   void UpdateSpot(double);
   void UpdateVol(double);
@@ -110,6 +110,13 @@ class fxopt{
 
 };
 
+double fxopt::GetDeltaC1Amount() const {
+  if(this->ccypair==XXXUSD)
+    return this->notional_c1*this->delta;
+  else //USDXXX /C1C2
+    return (this->notional_c1*this->delta + this->GetUSDPrice());
+}
+
 double fxopt::GetUSDPayout(double last_quote) const{
   fxopt * tmpcopy = new fxopt(*this);
   tmpcopy->UpdateSpotDT(last_quote,*(this->maturity_dt));
@@ -174,12 +181,11 @@ double fxopt::GetUSDTheta(double change) const{
 }
 
 double fxopt::GetUSDDelta(double change) const{
-  //this->delta contains currency1 delta amount
-  double c2_pnl_amount = this->delta*this->notional_c1*change;
   if(this->ccypair==XXXUSD)
-    return c2_pnl_amount;
+    return this->GetDeltaC1Amount()*change;
   else
-    return c2_pnl_amount/this->spot;
+    return this->GetDeltaC1Amount()*change/this->spot;
+    //return c2_pnl_amount/this->spot;
 }
 
 double fxopt::GetUSDGammaForStepCalculation() const{
@@ -197,13 +203,13 @@ double fxopt::GetUSDGamma(double change) const{
     return c2_pnl_amount/this->spot;    
 }
 
-double fxopt::GetUSDSpeed(double change) const{
-  double c2_pnl_amount = this->speed*this->notional_c1*change*change*change/6;
-  if(this->ccypair==XXXUSD)
-    return c2_pnl_amount;
-  else
-    return c2_pnl_amount/this->spot;      
-}
+/* double fxopt::GetUSDSpeed(double change) const{ */
+/*   double c2_pnl_amount = this->speed*this->notional_c1*change*change*change/6; */
+/*   if(this->ccypair==XXXUSD) */
+/*     return c2_pnl_amount; */
+/*   else */
+/*     return c2_pnl_amount/this->spot; */
+/* } */
 
 void fxopt::UpdateRisks(){
   this->CalculateYTM();
@@ -212,7 +218,7 @@ void fxopt::UpdateRisks(){
   this->CalculatePrice();
   this->CalculateDelta();
   this->CalculateGamma();
-  this->CalculateSpeed();
+  //this->CalculateSpeed();
   this->CalculateTheta();
   this->CalculateVega();
 }
