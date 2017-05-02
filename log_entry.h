@@ -7,8 +7,11 @@
 #include "dt.h"
 #include "norm.h"
 #include "fxoptions.h"
+#include "fxoptionscombination.h"
 #include "fxstraddle.h"
+#include "fxspread.h"
 #include "portfolio.h"
+
 
 class Portfolio;
 
@@ -26,7 +29,7 @@ class log_entry {
   double reb_delta_hedge = 0.0;
   unsigned int reb_num_orders_hit = 0;
 
-  FXStraddle * straddle = NULL;
+  FXOptionsCombination * straddle = NULL;
 
   double reb_step = 0.0;
   double reb_step_pips = 0.0;

@@ -14,6 +14,7 @@ class FXStraddle: public FXOptionsCombination {
   FXStraddle(double, double, double, double, double,         dt, dt, option_direction, option_ccypair, double, double);
   FXStraddle(double, double, double, double, double, double, dt, dt, option_direction, option_ccypair, double, double);
   FXStraddle(const FXStraddle &);
+  FXStraddle(FXStraddle *);
   ~FXStraddle();
 
   void PrintParams() const;
@@ -28,10 +29,20 @@ FXStraddle::FXStraddle(const FXStraddle & straddletocopy){
   this->num_portf = 2;
   this->portf = new fxopt*[2];
 
-  this->portf[0] = new fxopt(straddletocopy.GetStrike(),straddletocopy.GetVol(),straddletocopy.GetSpot(),straddletocopy.GetR_c2(),straddletocopy.GetR_c1(),straddletocopy.GetUSDNotional(),straddletocopy.GetMaturityDate(),straddletocopy.GetCurrentDate(),call,straddletocopy.GetOptionDir(),straddletocopy.GetOptionCcyPair(),straddletocopy.GetLinearDeltaWidth(),straddletocopy.GetMinYTM());
-
-  this->portf[1] = new fxopt(straddletocopy.GetStrike(),straddletocopy.GetVol(),straddletocopy.GetSpot(),straddletocopy.GetR_c2(),straddletocopy.GetR_c1(),straddletocopy.GetUSDNotional(),straddletocopy.GetMaturityDate(),straddletocopy.GetCurrentDate(),put,straddletocopy.GetOptionDir(),straddletocopy.GetOptionCcyPair(),straddletocopy.GetLinearDeltaWidth(),straddletocopy.GetMinYTM());
+  for(int i=0; i<this->num_portf;i++){
+    this->portf[i] = new fxopt(straddletocopy.GetStrike(),straddletocopy.GetVol(),straddletocopy.GetSpot(),straddletocopy.GetR_c2(),straddletocopy.GetR_c1(),straddletocopy.GetUSDNotional(),straddletocopy.GetMaturityDate(),straddletocopy.GetCurrentDate(),straddletocopy.GetOptionType(i),straddletocopy.GetOptionDir(i),straddletocopy.GetOptionCcyPair(),straddletocopy.GetLinearDeltaWidth(),straddletocopy.GetMinYTM());
+  }
 }
+
+FXStraddle::FXStraddle(FXStraddle * straddletocopy){
+  this->num_portf = 2;
+  this->portf = new fxopt*[2];
+
+  for(int i=0; i<this->num_portf;i++){
+    this->portf[i] = new fxopt(straddletocopy->GetStrike(),straddletocopy->GetVol(),straddletocopy->GetSpot(),straddletocopy->GetR_c2(),straddletocopy->GetR_c1(),straddletocopy->GetUSDNotional(),straddletocopy->GetMaturityDate(),straddletocopy->GetCurrentDate(),straddletocopy->GetOptionType(i),straddletocopy->GetOptionDir(i),straddletocopy->GetOptionCcyPair(),straddletocopy->GetLinearDeltaWidth(),straddletocopy->GetMinYTM());
+  }
+}
+
 
 FXStraddle::FXStraddle(double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp, double linear_delta_width, double min_ytm){
   this->num_portf = 2;

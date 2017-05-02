@@ -7,10 +7,13 @@
 #include "dt.h"
 #include "norm.h"
 #include "fxoptions.h"
+#include "fxoptionscombination.h"
 #include "fxstraddle.h"
+#include "fxspread.h"
 
 #include "portfolio.h"
 #include "log_entry.h"
+#include "fxoptionscombination.hpp"
 
 
 log_entry::log_entry(const Portfolio & myportf){
@@ -26,15 +29,16 @@ log_entry::log_entry(const Portfolio & myportf){
   this->reb_delta_hedge = myportf.last_reb_delta_hedge;
   this->reb_num_orders_hit = myportf.last_num_orders_hit;
 
-  this->straddle = new FXStraddle(*(myportf.straddle));
+  //this->straddle = new FXStraddle(*(myportf.straddle));
+  this->straddle = FXOptionsCombination::DynamicCaster(myportf.straddle);
   this->reb_slippage_pips = myportf.last_slippage_pips;
 
   this->reb_delta_unhedged = -(this->reb_delta_hedge + this->straddle->GetDeltaC1Amount());
   this->reb_opt_price = this->straddle->GetUSDPrice();
 
   if(myportf.num_log_entries>0){
-    FXStraddle * prev_straddle = new FXStraddle(*(myportf.log_entries[myportf.num_log_entries-1]->straddle));
-
+    //FXStraddle * prev_straddle = new FXStraddle(*(myportf.log_entries[myportf.num_log_entries-1]->straddle));
+    FXOptionsCombination * prev_straddle = FXOptionsCombination::DynamicCaster((myportf.log_entries[myportf.num_log_entries-1]->straddle));
     double spot_chg = (this->reb_spot-myportf.log_entries[myportf.num_log_entries-1]->reb_spot);
 
     this->reb_spot_change_pips = spot_chg * myportf.fx_mult;
@@ -72,7 +76,8 @@ log_entry::log_entry(const log_entry & my_entry){
   this->reb_spot = my_entry.reb_spot;
   this->reb_delta_hedge = my_entry.reb_delta_hedge;
   this->reb_num_orders_hit = my_entry.reb_num_orders_hit;
-  this->straddle = new FXStraddle(*(my_entry.straddle));
+  //this->straddle = new FXStraddle(*(my_entry.straddle));
+  this->straddle = FXOptionsCombination::DynamicCaster(my_entry.straddle);
 
   this->reb_step = my_entry.reb_step;
   this->reb_step_pips = my_entry.reb_step_pips;

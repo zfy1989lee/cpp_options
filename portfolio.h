@@ -21,11 +21,11 @@ class Portfolio {
  public:
   friend class log_entry;
   friend class c_cycle;
-  Portfolio(const FXStraddle &);
+  Portfolio(FXOptionsCombination *);
   Portfolio();
   ~Portfolio(); 
 
-  void LoadStraddle(const FXStraddle & );
+  void LoadStraddle(FXOptionsCombination * );
   void LoadStraddle(double, double, double, double, double, dt, dt, option_direction, option_ccypair, double, double);
   void SetThreshold(double);
   int GetNumLogEntries() const {return this->num_log_entries;}
@@ -58,7 +58,7 @@ class Portfolio {
   double GetTotalTradedC1Notional() const {return this->log_entries[this->num_log_entries-1]->total_traded_c1_notional;}
 
  public:
-  FXStraddle* straddle = NULL;
+  FXOptionsCombination * straddle = NULL;
 
  private:
   bool CheckIfTooManyRebalancings();

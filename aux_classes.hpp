@@ -3,13 +3,18 @@
 
 #include <string>
 #include "dt.h"
+#include "fxoptionscombination.h"
+#include "fxspread.h"
+#include "fxstraddle.h"
 #include "portfolio.h"
 #include "log_entry.h"
 #include "aux_classes.h"
+
 #include "math.h" //fabs
 
 #include "portfolio.hpp"
 #include "log_entry.hpp"
+#include "fxoptionscombination.hpp"
 
 void c_quote::printquote(){
   std::printf("%d-%02d-%02d %02d:%02d:%02d.%03d ",
@@ -84,7 +89,8 @@ bool c_cycle::IfAdjustOrders(unsigned int q){
   }
 
   double current_spot = 0.5*(this->cycle_quotes[q]->bid+this->cycle_quotes[q]->offer);
-  FXStraddle * mystraddle = new FXStraddle(*(this->my_portf->straddle));
+  //FXStraddle * mystraddle = new FXStraddle(*(this->my_portf->straddle));
+  FXOptionsCombination * mystraddle = FXOptionsCombination::DynamicCaster(this->my_portf->straddle);
   bool ifadjustorders = false;
 
   mystraddle->UpdateSpotDT(current_spot,*current_dt);
@@ -223,7 +229,8 @@ void c_cycle::CalculateSundaySteps(const c_quote & myquote){
 
   double step_pips_value = this->my_portf->sunday_step_pct * this->my_portf->straddle->GetSpot();
 
-  FXStraddle * existing_straddle = new FXStraddle(*(this->my_portf->straddle));
+  //FXStraddle * existing_straddle = new FXStraddle(*(this->my_portf->straddle));
+  FXOptionsCombination * existing_straddle = FXOptionsCombination::DynamicCaster(this->my_portf->straddle);
   
   this->my_portf->straddle->UpdateSpotDT(current_spot,*current_dt);
   this->my_portf->CalculateSteps();
@@ -247,7 +254,8 @@ void c_cycle::CalculateSundaySteps(const c_quote & myquote){
 
   delete this->my_portf->straddle;
   this->my_portf->straddle=NULL;
-  this->my_portf->straddle = new FXStraddle(*existing_straddle);
+  //this->my_portf->straddle = new FXStraddle(*existing_straddle);
+  this->my_portf->straddle = FXOptionsCombination::DynamicCaster(existing_straddle);
 
   delete current_dt;
   current_dt=NULL;

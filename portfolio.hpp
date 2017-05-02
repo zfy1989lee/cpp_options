@@ -12,9 +12,11 @@
 #include "log_entry.h"
 #include "portfolio.h"
 #include <algorithm>
+#include "fxoptionscombination.hpp"
 
-Portfolio::Portfolio(const FXStraddle & mystraddle){
-  this->straddle = new FXStraddle(mystraddle);
+Portfolio::Portfolio(FXOptionsCombination * mystraddle){
+  this->straddle = FXOptionsCombination::DynamicCaster(mystraddle);
+
   this->log_entries = new log_entry*[this->max_num_log_entries];
 
   if(this->straddle->GetOptionCcyPair()==XXXUSD){
@@ -128,9 +130,10 @@ checkhit Portfolio::CheckIfOrderIsHit(const double bid,const double offer) const
   return nohit;
 }
 
-void Portfolio::LoadStraddle(const FXStraddle & mystraddle){
+void Portfolio::LoadStraddle(FXOptionsCombination * mystraddle){
   if(this->straddle!=NULL){delete this->straddle;} 
-  this->straddle = new FXStraddle(mystraddle);
+  this->straddle = FXOptionsCombination::DynamicCaster(mystraddle);
+
   this->initial_price = this->straddle->GetUSDPrice();
   
   if(this->straddle->GetOptionCcyPair()==XXXUSD){
@@ -309,7 +312,8 @@ double Portfolio::RebalanceDeltaAtMarket(const dt & qtime, const double bid, con
   double mid = 0.5*(bid+offer);
   double traded_delta = 0.0;
 
-  FXStraddle *mystraddle = new FXStraddle(*(this->straddle));
+  //FXStraddle *mystraddle = new FXStraddle(*(this->straddle));
+  FXOptionsCombination * mystraddle = FXOptionsCombination::DynamicCaster(this->straddle);
   mystraddle->UpdateSpotDT(mid,qtime);
 
   if(!ifdelta100pct){
@@ -439,7 +443,9 @@ void Portfolio::CalculateOrders(){
   this->num_bottom = 0;
 
   for(int i = 0;i<this->num_top_steps;i++){
-    FXStraddle * newstraddle_top = new FXStraddle(*(this->straddle));
+    //FXStraddle * newstraddle_top = new FXStraddle(*(this->straddle));
+    FXOptionsCombination * newstraddle_top = FXOptionsCombination::DynamicCaster(this->straddle);
+
     double toprate = newstraddle_top->GetSpot()+this->top_steps[i];
     newstraddle_top->UpdateSpot(toprate);
     double newtopdelta = -newstraddle_top->GetDeltaC1Amount();
@@ -465,7 +471,9 @@ void Portfolio::CalculateOrders(){
   }
 
   for(int i = 0;i<this->num_bottom_steps;i++){
-    FXStraddle * newstraddle_bottom = new FXStraddle(*(this->straddle));
+    //FXStraddle * newstraddle_bottom = new FXStraddle(*(this->straddle));
+    FXOptionsCombination * newstraddle_bottom = FXOptionsCombination::DynamicCaster(this->straddle);
+
     double bottomrate = newstraddle_bottom->GetSpot()-this->bottom_steps[i];
     newstraddle_bottom->UpdateSpot(bottomrate);
     double newbottomdelta = -newstraddle_bottom->GetDeltaC1Amount();
@@ -517,7 +525,6 @@ bool Portfolio::CheckIfTooManyRebalancings(){
       return false;
     }
     else{
-
       // check sign
       //0 1 2 3 4 5 [6]
       //0   2   4
