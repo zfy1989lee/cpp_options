@@ -332,50 +332,17 @@ void c_cycle::add_quote(c_quote * pquote){
   }
 }
 
-void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, double sbid, double sbidsize, double soffer, double soffersize){
+void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, double dbid, double dbidsize, double doffer, double doffersize){
 
   //0.123
   while(sqms.size()<5){
     sqms+="0";
   }  
   std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
-
-  dt * quote_dt = new dt(datetimems);
-  if(!
-     ( (quote_dt->lt(*(this->cycle_start_dt)))
-      ||
-      (quote_dt->gt(*(this->cycle_end_dt))) ) 
-    ){
-
-      if(this->num_quotes+1==this->max_num_quotes){
-	c_quote **temparray = new c_quote*[this->max_num_quotes];
-
-	for(int i = 0; i<this->num_quotes;i++){
-	  temparray[i] = new c_quote(*(this->cycle_quotes[i]));
-	  delete this->cycle_quotes[i];
-	  this->cycle_quotes[i]=NULL;
-	}
-
-	delete[] this->cycle_quotes;
-	this->cycle_quotes=NULL;
-	this->max_num_quotes = 2*this->max_num_quotes;
-	this->cycle_quotes = new c_quote*[this->max_num_quotes];
-
-	for(int i = 0; i<this->num_quotes;i++){
-	  this->cycle_quotes[i] = new c_quote(*(temparray[i]));
-	  delete temparray[i];
-	  temparray[i]=NULL;
-	}
-	delete[] temparray;
-	temparray = NULL;
-      }
-
-    this->cycle_quotes[this->num_quotes] = new c_quote(datetimems,sbid,sbidsize,soffer,soffersize);
-    this->num_quotes++;
-  }
-
-  delete quote_dt;
-  quote_dt=NULL;
+                       //c_quote(std::string datetimems, double dbid, double dbidsize, double doffer, double doffersize)
+  c_quote * pquote = new c_quote(datetimems,dbid,dbidsize,doffer,doffersize);
+  this->add_quote(pquote);
+  delete pquote; pquote=NULL;
 }
 
 void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize){

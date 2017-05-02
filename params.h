@@ -33,7 +33,7 @@ class c_params{
 };
 
 std::string c_params::generate_sql_string(){
-  std::string sql_query_cycles = "SELECT a.cycle_id, a.cycle_start, a.cycle_end, a.starting_spot, a.strike, a.vol_bid, b1.m_minrowid, b2.m_maxrowid from "+this->cycles_table_name+" as a, "+this->mapping_table_name+" as b1, "+this->mapping_table_name+" as b2 where a.cycle_start=b1.m_date and a.cycle_end=b2.m_date ";
+  std::string sql_query_cycles = "SELECT a.cycle_id, a.cycle_start, a.cycle_end, a.starting_spot, a.strike, a.vol_bid, b1.m_minrowid, b2.m_maxrowid from "+this->cycles_table_name+" as a, "+this->mapping_table_name+" as b1, "+this->mapping_table_name+" as b2 where a.cycle_start=b1.m_date and a.cycle_end=b2.m_date and ((not a.vol_bid is null) or (not a.fwd_pts is null)) ";
 
   if(this->starting_cycle>1){
     sql_query_cycles+="and a.cycle_id>="+std::to_string(this->starting_cycle);

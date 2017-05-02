@@ -166,7 +166,7 @@ int main(int argc, char **argv){
 	loaded_quotes[num_quotes]=new c_quote(s1,s2,s3,d4,d5,d6,d7);
 	num_quotes++;
       }
-      cout<<"done\n";
+      cout<<"done ("<<num_quotes<<" quotes)\n";
 
       delete res; delete stmt; delete con;  
       res = NULL; stmt = NULL; con = NULL;
