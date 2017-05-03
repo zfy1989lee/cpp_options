@@ -71,7 +71,7 @@ int main(int argc, char **argv){
     res = stmt->executeQuery(sql_query_cycles);
 
     int num_cycles = 0;
-    int max_num_cycles = 2000;
+    int max_num_cycles = 2500;
     c_cycle **my_cycles = new c_cycle*[max_num_cycles];
 
     while (res->next()) {
@@ -90,21 +90,18 @@ int main(int argc, char **argv){
       num_cycles++;
     }
 
-    //cout<<"loading cycles... ";
-    cout<<"done\n";
+    cout<<"done\n"; //cycles data has been loaded
 
     delete res;    delete stmt;    delete con;  
     res = NULL;    stmt = NULL;    con = NULL;
 
     int super_cycle_num = my_params[k]->num_cycles;
 
+    c_arrayofquotes * my_quotesarray = new c_arrayofquotes(my_params[k]->database_name,my_params[k]->user_name,my_params[k]->password,my_params[k]->host,my_params[k]->cycles_table_name,my_params[k]->quotes_table_name,my_params[k]->mapping_table_name);
+
     for(int j=0; j<(int)(ceil(num_cycles/((double)super_cycle_num))); j++){
       cout<<"\tsuper cycle "+to_string(j+1)+" of "+to_string(int(ceil(num_cycles/((double)super_cycle_num))))+"\n";
       
-      unsigned int num_quotes = 0;
-      unsigned int max_num_quotes = 1000000; 
-      c_quote **loaded_quotes = new c_quote*[max_num_quotes];
-
       unsigned int minrowid = UINT_MAX;
       unsigned int maxrowid = 0;
 
@@ -118,62 +115,12 @@ int main(int argc, char **argv){
 	}
       }
 
-      string sql_request = "";
-      if(super_cycle_num>1){
-	sql_request = sql_getquotesfromrowidrange(my_params[k]->quotes_table_name,minrowid,maxrowid);
-      }
-      else{ //super_cycle_num==1
-	sql_request = my_cycles[j]->sql_getcyclequotes(my_params[k]->quotes_table_name);
-      }
+      my_quotesarray->UpdateMinMaxRowID(minrowid,maxrowid);
+      my_quotesarray->LoadQuotes(driver);
 
-      cout<<"\tconnecting to database... ";
-      con = driver->connect(my_params[k]->host, my_params[k]->user_name, my_params[k]->password);
-      con->setSchema(my_params[k]->database_name);
-      cout<<"done\n";
-
-      cout<<"\tloading quotes... ";
-      stmt = con->createStatement();
-      res = stmt->executeQuery(sql_request);
-
-      while (res->next()){
-	string s1 = res->getString("quotedate");
-	string s2 = res->getString("quotetime");
-	string s3 = res->getString("quotems");
-	double d4 = res->getDouble("quotebid");
-	double d5 = res->getDouble("bidvolume");
-	double d6 = res->getDouble("quoteoffer");
-	double d7 = res->getDouble("offervolume");
-
-	if(num_quotes+1==max_num_quotes){
-	  c_quote **temparray = new c_quote*[max_num_quotes];
-
-	  for(int i=0;i<num_quotes;i++){
-	    temparray[i] = loaded_quotes[i];
-	  }
-	  delete[] loaded_quotes;
-	  loaded_quotes=NULL;
-
-	  max_num_quotes = 2*max_num_quotes;
-	  loaded_quotes = new c_quote*[max_num_quotes];
-
-	  for(int i=0;i<num_quotes;i++){
-	    loaded_quotes[i] = temparray[i];
-	  }
-	  delete[] temparray;
-	  temparray = NULL;
-	}
-
-	loaded_quotes[num_quotes]=new c_quote(s1,s2,s3,d4,d5,d6,d7);
-	num_quotes++;
-      }
-      cout<<"done ("<<num_quotes<<" quotes)\n";
-
-      delete res; delete stmt; delete con;  
-      res = NULL; stmt = NULL; con = NULL;
-
-      for (int i=0; i<num_quotes;i++){
+      for (int i=0; i<my_quotesarray->num_quotes;i++){
 	for (int j1=super_cycle_num*j;j1<min(super_cycle_num*(j+1),num_cycles);j1++){
-	  my_cycles[j1]->add_quote(loaded_quotes[i]);
+	  my_cycles[j1]->add_quote(my_quotesarray->qarray[i]);
 	}
       }
 
@@ -252,13 +199,12 @@ int main(int argc, char **argv){
 	my_cycles[j1]=NULL;
       }
 
-      for (int i=0; i<num_quotes; i++){
-	delete loaded_quotes[i];
-	loaded_quotes[i]=NULL;
-      }
-      delete [] loaded_quotes;
-      loaded_quotes=NULL;
+
     }
+
+    delete my_quotesarray;
+    my_quotesarray=NULL;
+
     delete[] my_cycles;
     my_cycles = NULL;
   }

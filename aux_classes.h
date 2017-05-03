@@ -19,13 +19,15 @@ class order{
 class c_quote{
  public:
   //volume is adjusted by 1e6 multiple
-  c_quote(std::string, std::string, std::string, std::string, std::string);
-  c_quote(std::string, double, double, double, double);
-  c_quote(std::string, std::string, std::string, double, double, double, double);
+  c_quote(std::string, std::string, std::string, std::string, std::string,std::string);
+  c_quote(std::string, double, double, double, double, unsigned int);
+  c_quote(std::string, std::string, std::string, double, double, double, double, unsigned int);
   c_quote(const c_quote &);
   ~c_quote();
   void printquote();
   dt * quote_dt = NULL;
+
+  unsigned int rowid = 0;
   double bid = 0.0;
   double bidsize = 0.0;
   double offer = 0.0;
@@ -44,8 +46,8 @@ class c_cycle{
 
   bool IfAdjustOrders(unsigned int);
   bool IfSkipQuote(unsigned int) const;
-  void add_quote(std::string, std::string,std::string, std::string, std::string, std::string, std::string);
-  void add_quote(std::string, std::string,std::string, double, double,double,double);
+  void add_quote(std::string, std::string,std::string, std::string, std::string, std::string, std::string, std::string);
+  void add_quote(std::string, std::string,std::string, double, double,double,double,unsigned int);
   void add_quote(c_quote *);
 
   void delete_all_quotes();
@@ -106,5 +108,36 @@ class c_cycle{
   Portfolio * my_portf = NULL;
 };
 
+class c_arrayofquotes{
+ public:
+  c_arrayofquotes(std::string,std::string,std::string,std::string,std::string,std::string,std::string);
+  ~c_arrayofquotes();
+
+  void CheckIfExtensionIsRequired();
+  void UpdateMinMaxRowID(unsigned int, unsigned int);
+  std::string GenerateSQLStatement();
+  void LoadQuotes(sql::Driver *);
+  
+
+  unsigned int minrowid=0;
+  unsigned int maxrowid=0;
+
+  unsigned int minrowid_to_load=0;
+  unsigned int maxrowid_to_load=0;
+
+  
+  std::string database_name;
+  std::string user_name;
+  std::string password;
+  std::string host;
+
+  std::string cycles_table_name;
+  std::string quotes_table_name;
+  std::string mapping_table_name;
+  
+  c_quote ** qarray = NULL;
+  unsigned int num_quotes = 0;
+  unsigned int max_num_quotes = 5000000;
+};
 
 #endif

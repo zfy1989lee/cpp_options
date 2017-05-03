@@ -15,6 +15,7 @@
 #include "portfolio.hpp"
 #include "log_entry.hpp"
 #include "fxoptionscombination.hpp"
+#include <algorithm>
 
 void c_quote::printquote(){
   std::printf("%d-%02d-%02d %02d:%02d:%02d.%03d ",
@@ -35,25 +36,28 @@ c_quote::c_quote(const c_quote & mycopy){
   this->bidsize = mycopy.bidsize;
   this->offer = mycopy.offer;
   this->offersize = mycopy.offersize;
+  this->rowid = mycopy.rowid;
 }
 
-c_quote::c_quote(std::string datetimems, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize){
+c_quote::c_quote(std::string datetimems, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize, std::string srowid){
   this->quote_dt = new dt(datetimems);
   this->bid = stod(sbid);
   this->bidsize = stod(sbidsize)*1e6;
   this->offer = stod(soffer);
   this->offersize = stod(soffersize)*1e6;
+  this->rowid = stoi(srowid);
 }
 
-c_quote::c_quote(std::string datetimems, double dbid, double dbidsize, double doffer, double doffersize){
+c_quote::c_quote(std::string datetimems, double dbid, double dbidsize, double doffer, double doffersize, unsigned int uirowid){
   this->quote_dt = new dt(datetimems);
   this->bid = (dbid);
   this->bidsize = (dbidsize)*1e6;
   this->offer = (doffer);
   this->offersize = (doffersize)*1e6;
+  this->rowid = uirowid;
 }
 
-c_quote::c_quote(std::string sqdate, std::string sqtime, std::string sqms, double dbid, double dbidsize, double doffer, double doffersize){
+c_quote::c_quote(std::string sqdate, std::string sqtime, std::string sqms, double dbid, double dbidsize, double doffer, double doffersize, unsigned int uirowid){
 
   //0.123
   while(sqms.size()<5){
@@ -66,6 +70,7 @@ c_quote::c_quote(std::string sqdate, std::string sqtime, std::string sqms, doubl
   this->bidsize = dbidsize*1e6;
   this->offer = doffer;
   this->offersize = doffersize*1e6;
+  this->rowid = uirowid;
 }
 
 c_quote::~c_quote(){
@@ -295,7 +300,7 @@ std::string c_cycle::get_filename(std::string dirname){
 }
 
 std::string c_cycle::sql_getcyclequotes(std::string tablename){
-  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from ";
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume, rowid from ";
 
   std::string stringB = " where ( (rowid>="+std::to_string(this->minrowid)+" and rowid<="+std::to_string(this->maxrowid)+") AND ";
   std::string stringC = " ( (quotedate>'"+(this->cycle_start)+"' or (quotedate='"+(this->cycle_start)+"' and quotetime>='10:00:00')) AND ";
@@ -305,7 +310,7 @@ std::string c_cycle::sql_getcyclequotes(std::string tablename){
 }
 
 std::string sql_getquotesfromrowidrange(std::string tablename, unsigned int minrowid, unsigned int maxrowid){
-  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume from ";
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume, rowid from ";
   std::string stringB = " where (rowid>="+std::to_string(minrowid)+" and rowid<="+std::to_string(maxrowid)+");";
   return stringA+tablename+stringB;
 }
@@ -340,7 +345,7 @@ void c_cycle::add_quote(c_quote * pquote){
   }
 }
 
-void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, double dbid, double dbidsize, double doffer, double doffersize){
+void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, double dbid, double dbidsize, double doffer, double doffersize, unsigned int uirowid){
 
   //0.123
   while(sqms.size()<5){
@@ -348,13 +353,13 @@ void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms
   }  
   std::string datetimems = sqdate+" "+sqtime+sqms.substr(1,sqms.size()-1);
                        //c_quote(std::string datetimems, double dbid, double dbidsize, double doffer, double doffersize)
-  c_quote * pquote = new c_quote(datetimems,dbid,dbidsize,doffer,doffersize);
+  c_quote * pquote = new c_quote(datetimems,dbid,dbidsize,doffer,doffersize, uirowid);
   this->add_quote(pquote);
   delete pquote; pquote=NULL;
 }
 
-void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize){
-  this->add_quote(sqdate,sqtime,sqms,stod(sbid),stod(sbidsize),stod(soffer),stod(soffersize));
+void c_cycle::add_quote(std::string sqdate, std::string sqtime, std::string sqms, std::string sbid, std::string sbidsize, std::string soffer, std::string soffersize, std::string srowid){
+  this->add_quote(sqdate,sqtime,sqms,stod(sbid),stod(sbidsize),stod(soffer),stod(soffersize),stoi(srowid));
 }
 
 c_cycle::c_cycle(const c_cycle & my_cycle){
@@ -454,6 +459,171 @@ c_cycle::~c_cycle(){
 
   delete this->last_friday;
   delete this->last_sunday;
+}
+
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+
+
+c_arrayofquotes::c_arrayofquotes(std::string database, std::string user, std::string passw, std::string host, std::string cycles_table, std::string quotes_table, std::string mapping_table){
+  this->database_name = database;
+  this->user_name = user;
+  this->password = passw;
+  this->host = host;
+  this->cycles_table_name = cycles_table;
+  this->quotes_table_name = quotes_table;
+  this->mapping_table_name = mapping_table;
+
+  this->qarray = new c_quote*[max_num_quotes];
+}
+
+void c_arrayofquotes::CheckIfExtensionIsRequired(){
+  if(this->num_quotes+1 == this->max_num_quotes){
+    c_quote ** temparray = new c_quote*[this->num_quotes];
+
+    for(int i=0;i<this->num_quotes;i++){
+      temparray[i]=this->qarray[i];
+    }
+    delete[] this->qarray;
+    this->qarray=NULL;
+
+    this->max_num_quotes = 2*this->max_num_quotes;
+    this->qarray = new c_quote*[max_num_quotes];
+
+    for(int i=0;i<this->num_quotes;i++){
+      this->qarray[i]=temparray[i];
+    }    
+    delete[] temparray;
+    temparray = NULL;
+  }
+}
+
+std::string c_arrayofquotes::GenerateSQLStatement(){
+  std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume, rowid from ";
+  std::string stringB = " where (rowid>="+std::to_string(this->minrowid_to_load)+" and rowid<="+std::to_string(this->maxrowid_to_load)+");";
+  return stringA+this->quotes_table_name+stringB;
+}
+
+void c_arrayofquotes::LoadQuotes(sql::Driver * driver){
+
+  sql::Connection *con;
+  sql::Statement *stmt;
+  sql::ResultSet *res;
+
+  std::cout<<"\tconnecting to database... ";
+  //driver = get_driver_instance();
+  con = driver->connect(this->host,this->user_name,this->password);
+  con->setSchema(this->database_name);
+  std::cout<<"done\n";
+
+  std::cout<<"\tloading quotes... ";
+  stmt = con->createStatement();
+  res = stmt->executeQuery(this->GenerateSQLStatement());
+
+  unsigned int loaded_quotes=0;
+
+  while (res->next()){
+    loaded_quotes++;
+    std::string s1 = res->getString("quotedate");
+    std::string s2 = res->getString("quotetime");
+    std::string s3 = res->getString("quotems");
+    double d4 = res->getDouble("quotebid");
+    double d5 = res->getDouble("bidvolume");
+    double d6 = res->getDouble("quoteoffer");
+    double d7 = res->getDouble("offervolume");
+    int i0 = res->getInt("rowid");
+
+    this->CheckIfExtensionIsRequired();
+    this->qarray[this->num_quotes]=new c_quote(s1,s2,s3,d4,d5,d6,d7,i0);
+    this->num_quotes++;
+  }
+  
+  std::cout<<"\tdone (loaded:"<<loaded_quotes<<" total:"<<this->num_quotes<<")\n";
+
+  delete res; delete stmt; delete con;  
+  res = NULL; stmt = NULL; con = NULL;
+
+  this->minrowid = this->qarray[0]->rowid;
+  this->maxrowid = this->qarray[this->num_quotes-1]->rowid;
+
+}
+
+void c_arrayofquotes::UpdateMinMaxRowID(unsigned int newminrowid, unsigned int newmaxrowid){
+
+  if((this->minrowid==0)&&(this->maxrowid==0)){
+    this->minrowid_to_load = newminrowid;
+    this->maxrowid_to_load = newmaxrowid;
+
+    this->minrowid = newminrowid;
+    this->maxrowid = newmaxrowid;
+  }
+  else if(newminrowid<=this->maxrowid){ //there is some overlap
+    c_quote ** temparray = new c_quote*[this->num_quotes];
+    unsigned int num_temp = 0;
+
+    for(int i=0; i<this->num_quotes;i++){
+      if(this->qarray[i]->rowid<newminrowid){
+	delete this->qarray[i];
+	this->qarray[i]=NULL;
+      }
+      else if((this->qarray[i]->rowid>=newminrowid)&&(this->qarray[i]->rowid<=newmaxrowid)){
+	temparray[num_temp]=this->qarray[i];
+	num_temp++;
+      }
+      else if(this->qarray[i]->rowid>newmaxrowid){
+	delete this->qarray[i];
+	this->qarray[i]=NULL;
+      }
+    }
+
+    delete [] this->qarray;
+    this->qarray = new c_quote*[this->max_num_quotes];
+    this->num_quotes=0;
+    for(int i=0;i<num_temp;i++){
+      this->qarray[i] = temparray[i];
+      num_quotes++;
+    }
+    delete [] temparray;
+    temparray=NULL;
+        
+    //............        previous set of quotes
+    //     .............. new set of quotes
+    //     .......        remaining set of quotes
+    //            ....... set of quotes to be loaded
+    
+    this->minrowid = newminrowid;
+    this->maxrowid = std::min(this->maxrowid,newmaxrowid);
+
+    this->minrowid_to_load = this->maxrowid+1;
+    this->maxrowid_to_load = newmaxrowid;
+  }
+  else{//(newminrowid>this->maxrowid) // no overlap
+    for(int i=0; i<this->num_quotes;i++){
+      delete this->qarray[i];
+      this->qarray[i]=NULL;
+    }
+    delete [] this->qarray;
+    this->qarray = NULL;
+
+    this->qarray = new c_quote*[this->max_num_quotes];
+    this->num_quotes = 0;
+
+    this->minrowid = newminrowid;
+    this->maxrowid = newmaxrowid;
+
+    this->minrowid_to_load = newminrowid;
+    this->maxrowid_to_load = newmaxrowid;
+  }
+}
+
+c_arrayofquotes::~c_arrayofquotes(){
+  for(int i=0;i<num_quotes;i++){
+    delete this->qarray[i];
+    this->qarray[i]=NULL;
+  }
+  delete[] this->qarray;
+  this->qarray=NULL;
 }
 
 #endif

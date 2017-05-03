@@ -1,3 +1,6 @@
+#ifndef _C_PARAMS_H
+#define _C_PARAMS_H
+
 #include <iostream>
 #include <string>
 
@@ -149,3 +152,5 @@ c_params::~c_params(){
   delete[] thresholds;
   thresholds=NULL;
 }
+
+#endif
