@@ -4,11 +4,17 @@
 #include <iostream>
 #include <string>
 
+enum fxoptioncombinationtype {fxstraddle=0, fxcallspread=1,fxputspread=2};
+
 class c_params{
  public:
   c_params(std::string);
   ~c_params();
   std::string generate_sql_string();
+  static std::string parsestring(std::string);
+  static std::string removehash(std::string);
+  static std::string removespacetab(std::string);
+  static std::string removerspacetab(std::string);
 
   std::string database_name;
   std::string user_name;
@@ -18,6 +24,8 @@ class c_params{
   std::string cycles_table_name;
   std::string quotes_table_name;
   std::string mapping_table_name;
+
+  fxoptioncombinationtype stype;
 
   option_ccypair ccypair;
 
@@ -50,74 +58,114 @@ std::string c_params::generate_sql_string(){
   return sql_query_cycles;
 }
 
+std::string c_params::parsestring(std::string sline){
+  sline = c_params::removehash(sline);
+  sline = c_params::removespacetab(sline);
+  return sline;
+}
+
+std::string c_params::removehash(std::string sline){
+  int comment_pos = sline.find("#"); 
+  if(comment_pos!=std::string::npos){
+    sline = sline.substr(0,comment_pos);
+  }
+  return sline;
+}
+
+std::string c_params::removespacetab(std::string sline){
+  int trailing_space_pos = sline.find(" "); 
+  if(trailing_space_pos!=std::string::npos){
+    sline = sline.substr(0,trailing_space_pos);
+  }
+  int tab_pos = sline.find("\t"); 
+  if(tab_pos!=std::string::npos){
+    sline = sline.substr(0,tab_pos);
+  }
+  return sline;
+}
+
+std::string c_params::removerspacetab(std::string sline){
+  int trailing_space_pos = sline.rfind(" "); 
+  while(trailing_space_pos!=std::string::npos){
+    sline = sline.substr(0,trailing_space_pos);
+    trailing_space_pos = sline.rfind(" ");
+  }
+  int tab_pos = sline.rfind("\t"); 
+  while(tab_pos!=std::string::npos){
+    sline = sline.substr(0,tab_pos);
+    tab_pos = sline.rfind("\t");
+  }
+  return sline;
+}
+
+
 c_params::c_params(std::string conf_file){
   FILE *pFile = fopen(conf_file.c_str(), "r");
 
   if(pFile!=NULL){
     char line[256];
 
-    fscanf(pFile,"%s\n",line);
-    this->database_name = std::string(line);
+    fgets(line,sizeof(line),pFile);
+    this->database_name = c_params::parsestring(std::string(line));
 
-    fscanf(pFile,"%s\n",line);
-    this->user_name = std::string(line);
+    fgets(line,sizeof(line),pFile);
+    this->user_name = c_params::parsestring(std::string(line));
 
-    fscanf(pFile,"%s\n",line);
-    this->password = std::string(line);
+    fgets(line,sizeof(line),pFile);
+    this->password = c_params::parsestring(std::string(line));
 
-    fscanf(pFile,"%s\n",line);
-    this->host = std::string(line);
+    fgets(line,sizeof(line),pFile);
+    this->host = c_params::parsestring(std::string(line));
 
-    fscanf(pFile,"%s\n",line);
-    this->cycles_table_name = std::string(line);
-    fscanf(pFile,"%s\n",line);
-    this->quotes_table_name = std::string(line);
-    fscanf(pFile,"%s\n",line);
-    this->mapping_table_name = std::string(line);
+    fgets(line,sizeof(line),pFile);
+    this->cycles_table_name = c_params::parsestring(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->quotes_table_name = c_params::parsestring(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->mapping_table_name = c_params::parsestring(std::string(line));
 
-    fscanf(pFile,"%s\n",line);
-    this->starting_cycle = std::stoi(std::string(line));
-    fscanf(pFile,"%s\n",line);
-    this->ending_cycle = std::stoi(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->starting_cycle = std::stoi(c_params::parsestring(std::string(line)));
 
-    //fscanf(pFile,"%s\n",line);
-    //this->threshold = std::stoi(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->ending_cycle = std::stoi(c_params::parsestring(std::string(line)));
 
     thresholds = new int[100];
 
     fgets(line,sizeof(line),pFile);
-    std::string str_thresholds = std::string(line);
+    std::string str_thresholds = c_params::removehash(std::string(line));
 
     int prev_first_pos = 0;
     int first_pos = str_thresholds.find(" ",prev_first_pos); 
 
     while(first_pos!=std::string::npos){
-      thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos));
-      num_thresholds++;
+      //std::cout<<"_"<<str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos)<<"_"<<std::endl;
+
+      if(first_pos!=prev_first_pos){
+	thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos));
+	num_thresholds++;
+      }
       prev_first_pos = first_pos+1;
       first_pos = str_thresholds.find(" ",prev_first_pos);
     }
 
-    if(prev_first_pos!=str_thresholds.size()-1){
+    if(prev_first_pos!=str_thresholds.size()){
+      //std::cout<<"in_"<<str_thresholds.substr(prev_first_pos)<<"_"<<std::endl;
       thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos));
-      num_thresholds++;
+      num_thresholds++;      
     }
 
-    /* for(int j=0;j<num_thresholds;j++){ */
-    /*   std::cout<<"j"<<j<<" "<<thresholds[j]<<"\n"; */
-    /* } */
+    fgets(line,sizeof(line),pFile);
+    this->num_cycles = std::stoi(c_params::parsestring(std::string(line)));
 
-    fscanf(pFile,"%s\n",line);
-    this->num_cycles = std::stoi(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->linear_delta_width = std::stod(c_params::parsestring(std::string(line)));
 
-    fscanf(pFile,"%s\n",line);
-    this->linear_delta_width = std::stod(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->min_ytm = std::stod(c_params::parsestring(std::string(line)));
 
-    fscanf(pFile,"%s\n",line);
-    this->min_ytm = std::stod(std::string(line));
-
-    fscanf(pFile,"%s\n",line);
-    this->manual_rebalancing_delta_fraction = std::stod(std::string(line));
+    fgets(line,sizeof(line),pFile);
+    this->manual_rebalancing_delta_fraction = std::stod(c_params::parsestring(std::string(line)));
 
     fclose(pFile);
 
@@ -147,6 +195,100 @@ c_params::c_params(std::string conf_file){
     std::cout<<("Cannot open file "+conf_file)<<std::endl;
   }
 }
+
+/* c_params::c_params(std::string conf_file){ */
+/*   FILE *pFile = fopen(conf_file.c_str(), "r"); */
+
+/*   if(pFile!=NULL){ */
+/*     char line[256]; */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->database_name = std::string(line); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->user_name = std::string(line); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->password = std::string(line); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->host = std::string(line); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->cycles_table_name = std::string(line); */
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->quotes_table_name = std::string(line); */
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->mapping_table_name = std::string(line); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->starting_cycle = std::stoi(std::string(line)); */
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->ending_cycle = std::stoi(std::string(line)); */
+
+/*     //fscanf(pFile,"%s\n",line); */
+/*     //this->threshold = std::stoi(std::string(line)); */
+
+/*     thresholds = new int[100]; */
+
+/*     fgets(line,sizeof(line),pFile); */
+/*     std::string str_thresholds = std::string(line); */
+
+/*     int prev_first_pos = 0; */
+/*     int first_pos = str_thresholds.find(" ",prev_first_pos);  */
+
+/*     while(first_pos!=std::string::npos){ */
+/*       thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos)); */
+/*       num_thresholds++; */
+/*       prev_first_pos = first_pos+1; */
+/*       first_pos = str_thresholds.find(" ",prev_first_pos); */
+/*     } */
+
+/*     if(prev_first_pos!=str_thresholds.size()-1){ */
+/*       thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos)); */
+/*       num_thresholds++; */
+/*     } */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->num_cycles = std::stoi(std::string(line)); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->linear_delta_width = std::stod(std::string(line)); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->min_ytm = std::stod(std::string(line)); */
+
+/*     fscanf(pFile,"%s\n",line); */
+/*     this->manual_rebalancing_delta_fraction = std::stod(std::string(line)); */
+
+/*     fclose(pFile); */
+
+/*     this->conf_file_name = conf_file; */
+/*     this->folder_name = conf_file; */
+
+/*     unsigned int pos1 = this->folder_name.rfind("/");     */
+/*     if(pos1!=std::string::npos){ */
+/*       this->folder_name = this->folder_name.substr(pos1+1,this->folder_name.size()-pos1+1); */
+/*     } */
+
+/*     unsigned int pos2 = this->folder_name.rfind("."); */
+/*     if(pos2!=std::string::npos){ */
+/*       this->folder_name = this->folder_name.substr(0,pos2); */
+/*     } */
+
+/*     this->folder_name = "reports/"+this->folder_name; */
+    
+/*     if(this->quotes_table_name.substr(0,3)=="usd"){ */
+/*       this->ccypair = USDXXX; */
+/*     } */
+/*     else if (this->quotes_table_name.substr(3,3)=="usd"){ */
+/*       this->ccypair = XXXUSD; */
+/*     } */
+/*   } */
+/*   else{ */
+/*     std::cout<<("Cannot open file "+conf_file)<<std::endl; */
+/*   } */
+/* } */
 
 c_params::~c_params(){
   delete[] thresholds;
