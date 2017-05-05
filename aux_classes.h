@@ -5,6 +5,7 @@
 #include "dt.h"
 #include "portfolio.h"
 #include "log_entry.h"
+#include "params.h"
 
 enum checkhit {bottomhit=-1,nohit=0,tophit=1};
 
@@ -53,7 +54,7 @@ class c_cycle{
   void delete_all_quotes();
   void delete_quotes_array();
 
-  void load_straddle(double,double);
+  void load_fxoptionscombination(c_params *);
 
   void set_first_quote(double x){this->first_quote=x;}
   void set_last_quote(double x){this->last_quote=x;}

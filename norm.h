@@ -35,4 +35,26 @@ double npdf(double x){
   return pi_const * exp(-0.5*x*x);
 }
 
+double getinversenorm(double x){
+  
+  if(x>0.5)
+    return -getinversenorm(1.0-x);
+
+  double return_value=0.0;
+
+  switch ((int)round(x*100)){
+  case 50:
+    return_value = 0.0;
+    break;
+  case 25:
+    return_value = -0.6744897502;
+    break;
+  case 10:
+    return_value = -1.2815515655;
+    break;
+  }  
+
+  return return_value;
+}
+
 #endif

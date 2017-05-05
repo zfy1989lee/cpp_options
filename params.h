@@ -4,18 +4,22 @@
 #include <iostream>
 #include <string>
 
-enum fxoptioncombinationtype {fxstraddle=0, fxcallspread=1,fxputspread=2};
+enum fxoptioncombination_type {fxstraddle, fxspread};
+
 
 class c_params{
  public:
   c_params(std::string);
   ~c_params();
   std::string generate_sql_string();
+
   static std::string parsestring(std::string);
   static std::string removehash(std::string);
   static std::string removespacetab(std::string);
-  static std::string removerspacetab(std::string);
-
+  static std::string trimfrontsymbols(std::string,std::string);
+  static std::string trimbacksymbols(std::string,std::string);
+  static std::string trimsymbols(std::string);
+  
   std::string database_name;
   std::string user_name;
   std::string password;
@@ -25,7 +29,11 @@ class c_params{
   std::string quotes_table_name;
   std::string mapping_table_name;
 
-  fxoptioncombinationtype stype;
+  fxoptioncombination_type my_fxoptionscombination_type;
+
+  option_type * my_option_type = NULL; // for fxspread only
+  double * strike_delta = NULL; // for fxspread only
+  double * vol_spread = NULL; // for fxspread only
 
   option_ccypair ccypair;
 
@@ -60,7 +68,7 @@ std::string c_params::generate_sql_string(){
 
 std::string c_params::parsestring(std::string sline){
   sline = c_params::removehash(sline);
-  sline = c_params::removespacetab(sline);
+  sline = c_params::trimsymbols(sline);
   return sline;
 }
 
@@ -84,20 +92,33 @@ std::string c_params::removespacetab(std::string sline){
   return sline;
 }
 
-std::string c_params::removerspacetab(std::string sline){
-  int trailing_space_pos = sline.rfind(" "); 
-  while(trailing_space_pos!=std::string::npos){
-    sline = sline.substr(0,trailing_space_pos);
-    trailing_space_pos = sline.rfind(" ");
-  }
-  int tab_pos = sline.rfind("\t"); 
-  while(tab_pos!=std::string::npos){
-    sline = sline.substr(0,tab_pos);
-    tab_pos = sline.rfind("\t");
+std::string c_params::trimsymbols(std::string sline){
+  sline = c_params::trimfrontsymbols(sline," ");
+  sline = c_params::trimbacksymbols(sline," ");
+  sline = c_params::trimfrontsymbols(sline,"\t");
+  sline = c_params::trimbacksymbols(sline,"\t");
+  sline = c_params::trimfrontsymbols(sline," ");
+  sline = c_params::trimbacksymbols(sline," ");
+  return sline;
+}
+
+std::string c_params::trimfrontsymbols(std::string sline, std::string elem=" "){
+  int space_pos = sline.find(elem);
+  while((space_pos==0)&&(sline.size()>0)){
+    sline=sline.substr(1,sline.size()-1);
+    space_pos = sline.find(elem);
   }
   return sline;
 }
 
+std::string c_params::trimbacksymbols(std::string sline, std::string elem=" "){
+  int space_pos = sline.rfind(elem);
+  while((space_pos==sline.size()-1)&&(sline.size()>0)){
+    sline=sline.substr(0,sline.size()-1);
+    space_pos = sline.rfind(elem);
+  }
+  return sline;
+}
 
 c_params::c_params(std::string conf_file){
   FILE *pFile = fopen(conf_file.c_str(), "r");
@@ -124,14 +145,37 @@ c_params::c_params(std::string conf_file){
     fgets(line,sizeof(line),pFile);
     this->mapping_table_name = c_params::parsestring(std::string(line));
 
+    //parse strategy type: fxstraddle or fxspread
+    fgets(line,sizeof(line),pFile);
+    std::string string1 = c_params::removehash(std::string(line));
+    string1 = c_params::trimsymbols(string1);
+    
+    if(string1 == "fxstraddle"){
+      this->my_fxoptionscombination_type=fxstraddle;
+      std::cout<<"inside\n";
+    }
+    else{
+      this->my_fxoptionscombination_type=fxspread;
+      char s1[256], s2[256], s3[256], s4[256]; 
+      sscanf(string1.c_str(),"%s %s %s %s",s1,s2,s3,s4);
+
+      this->strike_delta = new double (stod(std::string(s3)));
+      this->vol_spread   = new double (stod(std::string(s4)));
+
+      if(std::string(s2)=="call")
+	this->my_option_type = new option_type(call);
+      else
+	this->my_option_type = new option_type(put);
+    }
+
     fgets(line,sizeof(line),pFile);
     this->starting_cycle = std::stoi(c_params::parsestring(std::string(line)));
 
     fgets(line,sizeof(line),pFile);
     this->ending_cycle = std::stoi(c_params::parsestring(std::string(line)));
 
+    //parse thresholds
     thresholds = new int[100];
-
     fgets(line,sizeof(line),pFile);
     std::string str_thresholds = c_params::removehash(std::string(line));
 
@@ -139,8 +183,6 @@ c_params::c_params(std::string conf_file){
     int first_pos = str_thresholds.find(" ",prev_first_pos); 
 
     while(first_pos!=std::string::npos){
-      //std::cout<<"_"<<str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos)<<"_"<<std::endl;
-
       if(first_pos!=prev_first_pos){
 	thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos, first_pos-prev_first_pos));
 	num_thresholds++;
@@ -150,7 +192,6 @@ c_params::c_params(std::string conf_file){
     }
 
     if(prev_first_pos!=str_thresholds.size()){
-      //std::cout<<"in_"<<str_thresholds.substr(prev_first_pos)<<"_"<<std::endl;
       thresholds[num_thresholds]=stoi(str_thresholds.substr(prev_first_pos));
       num_thresholds++;      
     }
@@ -293,6 +334,19 @@ c_params::c_params(std::string conf_file){
 c_params::~c_params(){
   delete[] thresholds;
   thresholds=NULL;
+
+  if(this->strike_delta!=NULL){
+    delete this->strike_delta;
+    this->strike_delta=NULL;
+  }
+  if(this->vol_spread!=NULL){
+    delete this->vol_spread;
+    this->vol_spread=NULL;
+  }
+  if(this->my_option_type!=NULL){
+    delete this->my_option_type;
+    this->my_option_type=NULL;
+  }
 }
 
 #endif

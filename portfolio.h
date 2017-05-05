@@ -25,8 +25,9 @@ class Portfolio {
   Portfolio();
   ~Portfolio(); 
 
-  void LoadStraddle(FXOptionsCombination * );
-  void LoadStraddle(double, double, double, double, double, dt, dt, option_direction, option_ccypair, double, double);
+  void LoadFXOptionsCombination(FXOptionsCombination * );
+  void LoadFXStraddle(double, double, double, double, double, dt, dt, option_direction, option_ccypair, double, double);
+  void LoadFXSpread(double, double, double, double, double, double, double, dt, dt, option_direction, option_ccypair, option_type, double, double);
   void SetThreshold(double);
   int GetNumLogEntries() const {return this->num_log_entries;}
 
@@ -61,6 +62,8 @@ class Portfolio {
   FXOptionsCombination * straddle = NULL;
 
  private:
+  static double GetStrikeForGivenDelta(double,double,double,double);
+
   bool CheckIfTooManyRebalancings();
   bool GetLastSpotChangeDirection();
   double GetStepValue(double, double, double);

@@ -16,6 +16,7 @@
 #include "log_entry.hpp"
 #include "fxoptionscombination.hpp"
 #include <algorithm>
+#include "params.h"
 
 void c_quote::printquote(){
   std::printf("%d-%02d-%02d %02d:%02d:%02d.%03d ",
@@ -165,18 +166,32 @@ void c_cycle::WriteToFile(std::string filename){
 	    this->cycle_end_dt->GetHour(),
 	    this->cycle_end_dt->GetMinute());
 
+  if(this->my_portf->straddle->GetStrike(0)==this->my_portf->straddle->GetStrike(1)){
+    fprintf(pFile,"%9.5f %9.5f %9.5f %5.2f ",
+	    this->strike,
+	    this->first_quote, 
+	    this->last_quote,
+	    this->vol*100);
+  }
+  else{
+    fprintf(pFile,"%9.5f %9.5f %9.5f %9.5f %5.2f %5.2f ",
+	    this->strike,
+	    this->my_portf->straddle->GetStrike(1),
+	    this->first_quote, 
+	    this->last_quote,
+	    this->vol*100,
+	    this->my_portf->straddle->GetVol(1)*100);    
+  }
 
-  fprintf(pFile,"%9.5f %9.5f %9.5f %5.2f %5d %5d %5d %4d %3d %6d ",
-	  this->strike,
-	  this->first_quote, 
-	  this->last_quote,
-	  this->vol*100,
+  fprintf(pFile,"%5d %5d %5d %4d %3d %6d ",
 	  this->num_quotes/1000,
 	  this->my_portf->num_log_entries,
 	  this->my_portf->hit_orders,
 	  this->my_portf->market_orders,
 	  this->my_portf->hit_orders+this->my_portf->market_orders-this->my_portf->num_log_entries,
 	  this->my_portf->total_orders);
+
+
 
   fprintf(pFile,"%7.0f %7.0f % 7.0f % 7.0f % 4.0f %4.0f\n",
 	  this->my_portf->GetInitialPrice(),
@@ -423,9 +438,20 @@ c_cycle::c_cycle(std::string scycle_id, std::string cycle_start, std::string cyc
   this->my_portf = new Portfolio();
 }
 
-void c_cycle::load_straddle(double linear_delta_width, double min_ytm){
-  //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp
-  this->my_portf->LoadStraddle(this->strike,this->vol,this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, linear_delta_width, min_ytm);
+// void c_cycle::load_fxoptionscombination(double linear_delta_width, double min_ytm){
+//   //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp
+//   this->my_portf->LoadStraddle(this->strike,this->vol,this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, linear_delta_width, min_ytm);
+// }
+
+void c_cycle::load_fxoptionscombination(c_params * my_params){
+
+  if(my_params->my_fxoptionscombination_type==fxstraddle){
+    //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp
+    this->my_portf->LoadFXStraddle(this->strike,this->vol,this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, my_params->linear_delta_width, my_params->min_ytm);
+  }
+  else{ // fxspread
+    this->my_portf->LoadFXSpread(this->strike,*(my_params->strike_delta),this->vol,*(my_params->vol_spread),this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, *(my_params->my_option_type), my_params->linear_delta_width, my_params->min_ytm);
+  }
 }
 
 void c_cycle::delete_all_quotes(){

@@ -136,7 +136,7 @@ int main(int argc, char **argv){
 	  c_cycle * t_cycle = new c_cycle (*(my_cycles[j1]));
 	
 	  //load straddle
-	  t_cycle->load_straddle(my_params[k]->linear_delta_width, my_params[k]->min_ytm);
+	  t_cycle->load_fxoptionscombination(my_params[k]);
 	  t_cycle->my_portf->SetThreshold(my_params[k]->thresholds[j2]);
 
 	  //first rebalancing

@@ -130,7 +130,7 @@ checkhit Portfolio::CheckIfOrderIsHit(const double bid,const double offer) const
   return nohit;
 }
 
-void Portfolio::LoadStraddle(FXOptionsCombination * mystraddle){
+void Portfolio::LoadFXOptionsCombination(FXOptionsCombination * mystraddle){
   if(this->straddle!=NULL){delete this->straddle;} 
   this->straddle = FXOptionsCombination::DynamicCaster(mystraddle);
 
@@ -145,7 +145,7 @@ void Portfolio::LoadStraddle(FXOptionsCombination * mystraddle){
 }
 
 //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp, double, double
-void Portfolio::LoadStraddle(double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction odir, option_ccypair ocp, double linear_delta_width, double min_ytm){
+void Portfolio::LoadFXStraddle(double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction odir, option_ccypair ocp, double linear_delta_width, double min_ytm){
   if(this->straddle!=NULL){delete this->straddle;} 
   this->straddle = new FXStraddle(K,V,S,F,notional,mat,cur,odir,ocp, linear_delta_width,min_ytm);
   this->initial_price = this->straddle->GetUSDPrice();
@@ -156,6 +156,39 @@ void Portfolio::LoadStraddle(double K, double V, double S, double F, double noti
   else{
     this->fx_mult=100.0;
   }
+}
+
+double Portfolio::GetStrikeForGivenDelta(double forward, double delta, double vol, double ytm){
+  return forward * exp(0.5 * vol * vol * sqrt(ytm) - vol * sqrt(ytm)*getinversenorm(delta));
+}
+
+void Portfolio::LoadFXSpread(double Kbuy, double strike_delta, double Vbuy, double dV, double S, double F, double notionalbuy, dt mat, dt cur, option_direction odir, option_ccypair ocp, option_type otype, double linear_delta_width, double min_ytm){
+
+  if(this->straddle!=NULL){delete this->straddle;} 
+
+  //  if(otype==call)
+  // strike_delta = (strike_delta>0)?strike_delta:-strike_delta;
+  //else
+  //  strike_delta = (strike_delta>0)?-strike_delta:strike_delta;
+
+  if(otype==put){
+    strike_delta = 1.0-strike_delta;
+  }
+
+  double ytm = mat.CalculateNumberOfYears(cur);
+  ytm = (ytm<0)?0:ytm;
+
+  double Ksell = GetStrikeForGivenDelta(F,strike_delta,Vbuy+dV,ytm);
+
+  this->straddle = new FXSpread(Kbuy,Ksell,Vbuy,dV,S,F,notionalbuy,mat,cur,odir,ocp,otype,linear_delta_width,min_ytm);
+  this->initial_price = this->straddle->GetUSDPrice();
+
+  if(this->straddle->GetOptionCcyPair()==XXXUSD){
+    this->fx_mult=10000.0;
+  }
+  else{
+    this->fx_mult=100.0;
+  }  
 }
 
 void Portfolio::SetThreshold(double threshold){
