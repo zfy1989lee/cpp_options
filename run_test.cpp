@@ -39,6 +39,9 @@ int main(int argc, char **argv){
 
   c_params **my_params = new c_params*[argc-1];
 
+  sql::Driver *driver;
+  driver = get_driver_instance();
+
   for(int k=0;k<argc-1;k++){
     cout<<"reading conf file "+to_string(k+1)+" of "+to_string(argc-1)+"... ";
     my_params[k] = new c_params(argv[k+1]);
@@ -54,12 +57,10 @@ int main(int argc, char **argv){
     }
 
     cout<<"connecting to database... ";
-    sql::Driver *driver;
     sql::Connection *con;
     sql::Statement *stmt;
     sql::ResultSet *res;
 
-    driver = get_driver_instance();
     con = driver->connect(my_params[k]->host, my_params[k]->user_name, my_params[k]->password);
     con->setSchema(my_params[k]->database_name);
     cout<<"done\n";

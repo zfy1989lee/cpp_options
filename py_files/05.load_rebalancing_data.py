@@ -25,16 +25,14 @@ def LoadTxtFile(filename):
     columns_str = "reb_date,reb_time,reb_spot,reb_spot_chg_pips,reb_step_pips,reb_slippage_pips,reb_no_orders_hit,reb_delta_hedge,reb_unhedged_delta,reb_delta_pnl,reb_total_delta_pnl,reb_option_price_change,reb_portfolio_pnl,reb_total_portfolio_pnl,reb_delta,reb_gamma,reb_theta,reb_xgamma,option_price"
     columns = columns_str.split(",")
 
-    #read_csv("vol_fwdpts.txt",parse_dates=True,skiprows=1,infer_datetime_format=True,sep=",",names=cols,index_col="Date", na_values="N/A")
     report_df = pd.read_csv(filename,parse_dates=True,skiprows=1,infer_datetime_format=True,names=columns,delim_whitespace=True)
-
     return report_df
 
-insert_into_cols = "(reb_cycle_id,reb_date,reb_time,reb_spot,reb_spot_chg_pips,reb_step_pips,reb_slippage_pips,reb_no_orders_hit,reb_delta_hedge,reb_unhedged_delta,reb_delta_pnl,reb_total_delta_pnl,reb_option_price_change,reb_portfolio_pnl,reb_total_portfolio_pnl,reb_delta,reb_gamma,reb_theta,reb_xgamma,option_price,threshold)"
+insert_into_cols = "(reb_cycle_id,reb_date,reb_time,reb_spot,reb_spot_chg_pips,reb_step_pips,reb_slippage_pips,reb_no_orders_hit,reb_delta_hedge,reb_unhedged_delta,reb_delta_pnl,reb_total_delta_pnl,reb_option_price_change,reb_portfolio_pnl,reb_total_portfolio_pnl,reb_delta,reb_gamma,reb_theta,reb_xgamma,option_price,threshold,tenor,ccypair)"
 
-ccypairs = ["eurusd"]
+ccypairs = ["gbpusd"]
 tenors = ["3m"]
-thresholds = [100,500,1000,2500,5000]
+thresholds = [100,250,500,750,1000,1250,2500,5000]
 
 for ccypair in ccypairs:
     for tenor in tenors:
@@ -49,14 +47,14 @@ for ccypair in ccypairs:
                     
                     str_array = []
                     for i in txt_df.index:
-                        sql_query = "INSERT INTO reb_%s_%s %s VALUES (%s,\"%s\",\"%s\",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);" % (ccypair,tenor, insert_into_cols, cycle_id, 
+                        sql_query = "INSERT INTO rebalancing_data_straddles %s VALUES (%s,\"%s\",\"%s\",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\"%s\",\"%s\");" % (insert_into_cols, cycle_id, 
                          txt_df.ix[i,"reb_date"], txt_df.ix[i,"reb_time"], txt_df.ix[i,"reb_spot"], txt_df.ix[i,"reb_spot_chg_pips"], 
                          txt_df.ix[i,"reb_step_pips"],txt_df.ix[i,"reb_slippage_pips"],txt_df.ix[i,"reb_no_orders_hit"], 
                          txt_df.ix[i,"reb_delta_hedge"],txt_df.ix[i,"reb_unhedged_delta"],txt_df.ix[i,"reb_delta_pnl"], 
                          txt_df.ix[i,"reb_total_delta_pnl"],txt_df.ix[i,"reb_option_price_change"], 
                          txt_df.ix[i,"reb_portfolio_pnl"],txt_df.ix[i,"reb_total_portfolio_pnl"], 
-                         txt_df.ix[i,"reb_delta"],txt_df.ix[i,"reb_gamma"],txt_df.ix[i,"reb_theta"],txt_df.ix[i,"reb_xgamma"], 
-                         txt_df.ix[i,"option_price"],threshold)
+                         txt_df.ix[i,"reb_delta"],txt_df.ix[i,"reb_gamma"],txt_df.ix[i,"reb_theta"],txt_df.ix[i,"reb_xgamma"],
+                        txt_df.ix[i,"option_price"],threshold,tenor,ccypair)
 
                         str_array.append(sql_query)
                     
