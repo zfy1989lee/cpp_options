@@ -25,7 +25,7 @@ class FXOptionsCombination{
   double GetR_c1() const {return this->portf[0]->GetR_c1();}
   double GetYTM() const {return this->portf[0]->GetYTM();}
   double GetMinYTM() const {return this->portf[0]->GetMinYTM();}
-  option_ccypair GetOptionCcyPair() const {return this->portf[0]->GetOptionCcyPair();}
+  option_ccypair GetOptionCcyPair(int i=0) const {return this->portf[i]->GetOptionCcyPair();}
   option_direction GetOptionDir(int i=0) const {return this->portf[i]->GetOptionDir();}
   option_type GetOptionType(int i=0) const {return this->portf[i]->GetOptionType();}
 

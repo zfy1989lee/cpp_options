@@ -30,7 +30,7 @@ FXSpread::FXSpread(const FXSpread & straddletocopy){
   this->portf = new fxopt*[2];
 
   for(int i=0;i<this->num_portf;i++){
-    this->portf[i] = new fxopt(straddletocopy.GetStrike(i),straddletocopy.GetVol(i),straddletocopy.GetSpot(),straddletocopy.GetR_c2(),straddletocopy.GetR_c1(),straddletocopy.GetUSDNotional(i),straddletocopy.GetMaturityDate(),straddletocopy.GetCurrentDate(),straddletocopy.GetOptionType(i),straddletocopy.GetOptionDir(i),straddletocopy.GetOptionCcyPair(),straddletocopy.GetLinearDeltaWidth(),straddletocopy.GetMinYTM());
+    this->portf[i] = new fxopt(straddletocopy.GetStrike(i),straddletocopy.GetVol(i),straddletocopy.GetSpot(),straddletocopy.GetR_c2(),straddletocopy.GetR_c1(),straddletocopy.GetUSDNotional(i),straddletocopy.GetMaturityDate(),straddletocopy.GetCurrentDate(),straddletocopy.GetOptionType(i),straddletocopy.GetOptionDir(i),straddletocopy.GetOptionCcyPair(i),straddletocopy.GetLinearDeltaWidth(),straddletocopy.GetMinYTM());
   }
 }
 
@@ -39,7 +39,7 @@ FXSpread::FXSpread(FXSpread * straddletocopy){
   this->portf = new fxopt*[2];
 
   for(int i=0;i<this->num_portf;i++){
-    this->portf[i] = new fxopt(straddletocopy->GetStrike(i),straddletocopy->GetVol(i),straddletocopy->GetSpot(),straddletocopy->GetR_c2(),straddletocopy->GetR_c1(),straddletocopy->GetUSDNotional(i),straddletocopy->GetMaturityDate(),straddletocopy->GetCurrentDate(),straddletocopy->GetOptionType(i),straddletocopy->GetOptionDir(i),straddletocopy->GetOptionCcyPair(),straddletocopy->GetLinearDeltaWidth(),straddletocopy->GetMinYTM());
+    this->portf[i] = new fxopt(straddletocopy->GetStrike(i),straddletocopy->GetVol(i),straddletocopy->GetSpot(),straddletocopy->GetR_c2(),straddletocopy->GetR_c1(),straddletocopy->GetUSDNotional(i),straddletocopy->GetMaturityDate(),straddletocopy->GetCurrentDate(),straddletocopy->GetOptionType(i),straddletocopy->GetOptionDir(i),straddletocopy->GetOptionCcyPair(i),straddletocopy->GetLinearDeltaWidth(),straddletocopy->GetMinYTM());
   }
 
 }
@@ -48,18 +48,17 @@ FXSpread::FXSpread(double Kbuy, double Ksell, double Vbuy, double dV, double S, 
   this->num_portf = 2;
   this->portf = new fxopt*[2];
 
-  double USDnotionalbuy, USDnotionalsell;
+  double USDnotionalsell;
   if(mycp==USDXXX){
-    USDnotionalbuy  = notionalbuy;
     USDnotionalsell = notionalbuy;
   }
   else{ // mycp==XXXUSD
-    USDnotionalbuy  = notionalbuy / Kbuy;
-    USDnotionalsell = notionalbuy / Ksell;
+    double XXXnotionalbuy = notionalbuy / Kbuy;
+    USDnotionalsell = XXXnotionalbuy * Ksell;
   }
 
   //(double K, double V, double S, double F, double notional, dt mat, dt cur, option_type mytype, option_direction mydir, option_ccypair mycp,double,double)  
-  this->portf[0] = new fxopt(Kbuy ,Vbuy,S,F,USDnotionalbuy ,mat,cur,mytype, mydir,mycp,linear_delta_width,min_ytm);
+  this->portf[0] = new fxopt(Kbuy ,Vbuy,S,F,notionalbuy ,mat,cur,mytype, mydir,mycp,linear_delta_width,min_ytm);
   this->portf[1] = new fxopt(Ksell,Vbuy+dV,S,F,USDnotionalsell,mat,cur,mytype,(option_direction)(-mydir),mycp,linear_delta_width,min_ytm);
 }
 
@@ -68,18 +67,17 @@ FXSpread::FXSpread(double Kbuy, double Ksell, double Vbuy, double dV, double S, 
   this->num_portf = 2;
   this->portf = new fxopt*[2];
 
-  double USDnotionalbuy, USDnotionalsell;
+  double USDnotionalsell;
   if(mycp==USDXXX){
-    USDnotionalbuy = notionalbuy;
     USDnotionalsell = notionalbuy;
   }
   else{ // mycp==XXXUSD
-    USDnotionalbuy = notionalbuy / Kbuy;
-    USDnotionalsell = notionalbuy/ Ksell;
+    double XXXnotionalbuy = notionalbuy / Kbuy;
+    USDnotionalsell = XXXnotionalbuy * Ksell;
   }
 
   //(double K, double V, double S, double r_c2, double r_c1, double notional, dt mat, dt cur, option_type mytype, option_direction mydir, option_ccypair mycp,double,double)
-  this->portf[0] = new fxopt(Kbuy ,Vbuy   , S, r_c2, r_c1, USDnotionalbuy , mat, cur, mytype, mydir, mycp, linear_delta_width, min_ytm);
+  this->portf[0] = new fxopt(Kbuy ,Vbuy   , S, r_c2, r_c1, notionalbuy , mat, cur, mytype, mydir, mycp, linear_delta_width, min_ytm);
   this->portf[1] = new fxopt(Ksell,Vbuy+dV, S, r_c2, r_c1, USDnotionalsell, mat, cur, mytype,(option_direction)(-mydir), mycp, linear_delta_width, min_ytm);
 }
 
