@@ -18,6 +18,10 @@
 #include <algorithm>
 #include "params.h"
 
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+
 void c_quote::printquote(){
   std::printf("%d-%02d-%02d %02d:%02d:%02d.%03d ",
 	    this->quote_dt->GetYear(),
@@ -150,58 +154,66 @@ void c_cycle::WriteToFile(std::string filename){
   FILE * pFile;
   pFile = fopen(filename.c_str(),"a+");
 
-  fprintf(pFile,"%-4d ",this->cycle_id);
+  if(pFile==NULL){
+    perror("Error opening file");
+    printf("Error code opening file: %d\n",errno);
+    printf("Error opening file: %s\n",strerror(errno));
+    exit(-1);
+  }
+  else{
 
-  fprintf(pFile,"%d-%02d-%02d %02d:%02d ",
+    fprintf(pFile,"%-4d ",this->cycle_id);
+
+    fprintf(pFile,"%d-%02d-%02d %02d:%02d ",
 	    this->cycle_start_dt->GetYear(),
 	    this->cycle_start_dt->GetMonth(),
 	    this->cycle_start_dt->GetDay(),
 	    this->cycle_start_dt->GetHour(),
 	    this->cycle_start_dt->GetMinute());
 
-  fprintf(pFile,"%d-%02d-%02d %02d:%02d ",
+    fprintf(pFile,"%d-%02d-%02d %02d:%02d ",
 	    this->cycle_end_dt->GetYear(),
 	    this->cycle_end_dt->GetMonth(),
 	    this->cycle_end_dt->GetDay(),
 	    this->cycle_end_dt->GetHour(),
 	    this->cycle_end_dt->GetMinute());
 
-  if(this->my_portf->straddle->GetStrike(0)==this->my_portf->straddle->GetStrike(1)){
-    fprintf(pFile,"%9.5f %9.5f %9.5f %5.2f ",
-	    this->strike,
-	    this->first_quote, 
-	    this->last_quote,
-	    this->vol*100);
+    if(this->my_portf->straddle->GetStrike(0)==this->my_portf->straddle->GetStrike(1)){
+      fprintf(pFile,"%9.5f %9.5f %9.5f %5.2f ",
+	      this->strike,
+	      this->first_quote, 
+	      this->last_quote,
+	      this->vol*100);
+    }
+    else{
+      fprintf(pFile,"%9.5f %9.5f %9.5f %9.5f %5.2f %5.2f ",
+	      this->strike,
+	      this->my_portf->straddle->GetStrike(1),
+	      this->first_quote, 
+	      this->last_quote,
+	      this->vol*100,
+	      this->my_portf->straddle->GetVol(1)*100);    
+    }
+
+    fprintf(pFile,"%5d %5d %5d %4d %3d %6d ",
+	    this->num_quotes/1000,
+	    this->my_portf->num_log_entries,
+	    this->my_portf->hit_orders,
+	    this->my_portf->market_orders,
+	    this->my_portf->hit_orders+this->my_portf->market_orders-this->my_portf->num_log_entries,
+	    this->my_portf->total_orders);
+
+
+    fprintf(pFile,"%7.0f %7.0f % 7.0f % 7.0f % 4.0f %4.0f\n",
+	    this->my_portf->GetInitialPrice(),
+	    this->my_portf->GetFinalPrice(),
+	    this->my_portf->GetTotalDeltaPnl(),
+	    this->my_portf->GetTotalPortfolioPnl(),
+	    ((this->my_portf->GetInitialPrice()-this->my_portf->GetFinalPrice())+this->my_portf->GetTotalDeltaPnl())-this->my_portf->GetTotalPortfolioPnl(),
+	    this->my_portf->GetTotalTradedC1Notional()/1.0e6);
+
+    fclose(pFile);
   }
-  else{
-    fprintf(pFile,"%9.5f %9.5f %9.5f %9.5f %5.2f %5.2f ",
-	    this->strike,
-	    this->my_portf->straddle->GetStrike(1),
-	    this->first_quote, 
-	    this->last_quote,
-	    this->vol*100,
-	    this->my_portf->straddle->GetVol(1)*100);    
-  }
-
-  fprintf(pFile,"%5d %5d %5d %4d %3d %6d ",
-	  this->num_quotes/1000,
-	  this->my_portf->num_log_entries,
-	  this->my_portf->hit_orders,
-	  this->my_portf->market_orders,
-	  this->my_portf->hit_orders+this->my_portf->market_orders-this->my_portf->num_log_entries,
-	  this->my_portf->total_orders);
-
-
-
-  fprintf(pFile,"%7.0f %7.0f % 7.0f % 7.0f % 4.0f %4.0f\n",
-	  this->my_portf->GetInitialPrice(),
-	  this->my_portf->GetFinalPrice(),
-	  this->my_portf->GetTotalDeltaPnl(),
-	  this->my_portf->GetTotalPortfolioPnl(),
-	  ((this->my_portf->GetInitialPrice()-this->my_portf->GetFinalPrice())+this->my_portf->GetTotalDeltaPnl())-this->my_portf->GetTotalPortfolioPnl(),
-	  this->my_portf->GetTotalTradedC1Notional()/1.0e6);
-  //
-  fclose(pFile);
 }
 
 bool c_cycle::IfMinYTMRebalancing(const c_quote & myquote){

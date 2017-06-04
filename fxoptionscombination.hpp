@@ -30,6 +30,15 @@ FXOptionsCombination * FXOptionsCombination::DynamicCaster(FXOptionsCombination 
 double FXOptionsCombination::GetUSDPayout(double last_quote) const {
   double sum=0;
   for(int i=0;i<this->num_portf;i++){
+
+    /*
+    std::cout<<"num i:     "<<i<<std::endl;
+    std::cout<<"payout:     "<<this->portf[i]->GetUSDPayout(last_quote)<<std::endl;
+    std::cout<<"last_quote: "<<last_quote<<std::endl;
+    std::cout<<"strike:     "<<this->portf[i]->GetStrike()<<std::endl<<std::endl;
+    std::cout<<"C1 not:     "<<this->portf[i]->GetC1Notional()<<std::endl<<std::endl;
+    */
+
     sum+=this->portf[i]->GetUSDPayout(last_quote);
   }
   return sum;

@@ -32,8 +32,8 @@ int main(int argc, char **argv){
     return 0;
   }
 
-  struct stat st;
-  if(stat("reports",&st)!=0){
+  struct stat st1;
+  if(stat("reports",&st1)!=0){
     system("mkdir reports");
   }
 
@@ -41,6 +41,9 @@ int main(int argc, char **argv){
 
   sql::Driver *driver;
   driver = get_driver_instance();
+  sql::Connection *con;
+  sql::Statement *stmt;
+  sql::ResultSet *res;
 
   for(int k=0;k<argc-1;k++){
     cout<<"reading conf file "+to_string(k+1)+" of "+to_string(argc-1)+"... ";
@@ -50,17 +53,17 @@ int main(int argc, char **argv){
     for(int j2=0;j2<my_params[k]->num_thresholds;j2++){
       string dirname = my_params[k]->folder_name+"_"+to_string(my_params[k]->thresholds[j2]);
       cout<<"preparing directory "+dirname+" ...";
-      if(stat(dirname.c_str(),&st)!=0){
+
+      struct stat st2;
+      if(stat(dirname.c_str(),&st2)!=0){
 	system(("mkdir "+dirname).c_str());
       }
       cout<<"done\n";
     }
+  }
 
+  for(int k=0;k<argc-1;k++){
     cout<<"connecting to database... ";
-    sql::Connection *con;
-    sql::Statement *stmt;
-    sql::ResultSet *res;
-
     con = driver->connect(my_params[k]->host, my_params[k]->user_name, my_params[k]->password);
     con->setSchema(my_params[k]->database_name);
     cout<<"done\n";
@@ -92,9 +95,6 @@ int main(int argc, char **argv){
     }
 
     cout<<"done\n"; //cycles data has been loaded
-
-    delete res;    delete stmt;    delete con;  
-    res = NULL;    stmt = NULL;    con = NULL;
 
     int super_cycle_num = my_params[k]->num_cycles;
 
@@ -199,8 +199,6 @@ int main(int argc, char **argv){
 	delete my_cycles[j1];
 	my_cycles[j1]=NULL;
       }
-
-
     }
 
     delete my_quotesarray;
@@ -209,6 +207,9 @@ int main(int argc, char **argv){
     delete[] my_cycles;
     my_cycles = NULL;
   }
+
+  delete res;    delete stmt;    delete con;  
+  res = NULL;    stmt = NULL;    con = NULL;
 
   for(int k=0;k<argc-1;k++){
     delete my_params[k];

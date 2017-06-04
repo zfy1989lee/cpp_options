@@ -5,6 +5,7 @@
 #include <math.h>
 #include "dt.h"
 #include "norm.h"
+#include <algorithm>
 
 enum option_type {put=0, call=1};
 enum option_direction {buy=1, sell=-1};
@@ -118,11 +119,25 @@ double fxopt::GetDeltaC1Amount() const {
 }
 
 double fxopt::GetUSDPayout(double last_quote) const{
-  fxopt * tmpcopy = new fxopt(*this);
-  tmpcopy->UpdateSpotDT(last_quote,*(this->maturity_dt));
-  double return_value = tmpcopy->GetUSDPrice();
-  delete tmpcopy;
-  tmpcopy=NULL;
+  //fxopt * tmpcopy = new fxopt(*this);
+  //tmpcopy->UpdateSpotDT(last_quote,*(this->maturity_dt));
+  //double return_value = tmpcopy->GetUSDPrice();
+  //delete tmpcopy;
+  //tmpcopy=NULL;
+
+  double return_value=0;
+
+  if(this->GetOptionType()==call){
+    return_value=-1.0*((int)this->GetOptionDir())*this->GetC1Notional()*std::max(last_quote-this->GetStrike(),0.0);
+  }
+  else{
+    return_value=-1.0*((int)this->GetOptionDir())*this->GetC1Notional()*std::max(this->GetStrike()-last_quote,0.0);
+  }
+  
+  if(this->GetOptionCcyPair()==USDXXX){
+    return_value = return_value/last_quote;
+  }
+
   return return_value;
 }
 

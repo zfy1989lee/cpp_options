@@ -32,7 +32,7 @@ insert_into_cols = "(reb_cycle_id,reb_date,reb_time,reb_spot,reb_spot_chg_pips,r
 opttypes = ["put","call"] # put or call
 delta = 25
 ccypairs = ["eurusd"]
-tenors = ["1w"]
+tenors = ["1w","1m"]
 volspreads = ["m10","m05","00","05","10"]
 thresholds = [50,75,100,250,500,750,1000,1250,2500]
 

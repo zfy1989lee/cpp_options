@@ -13,6 +13,9 @@
 #include "portfolio.h"
 #include <algorithm>
 #include "fxoptionscombination.hpp"
+#include <cerrno>
+#include <cstring>
+
 
 Portfolio::Portfolio(FXOptionsCombination * mystraddle){
   this->straddle = FXOptionsCombination::DynamicCaster(mystraddle);
@@ -75,48 +78,58 @@ void Portfolio::WriteToFile(std::string filename) const {
 
   FILE * pFile;
   pFile = fopen(filename.c_str(),"w");
-  fprintf(pFile,"%23s ","dt");
 
-  fprintf(pFile,"%8s %6s %5s %4s %2s %9s %8s ","spot","chg","step","slpg","ht","delta","unhedged");
-  //"% 7.0f % 8.0f % 7.0f % 7.0f % 8.0f "
-  fprintf(pFile,"%7s %8s %7s %7s %8s ","de_pnl","de_total","op_chg","po_pnl","po_total");
-  //"% 7.0f % 7.0f % 7.0f % 7.0f % 7.0f\n"
-  fprintf(pFile,"%7s %7s %7s %7s %7s\n","o_delta","o_gamma","o_theta","o_xgm","op_prc");
-
-  for(int i=0; i<this->GetNumLogEntries();i++){
-    fprintf(pFile,"%d-%02d-%02d %02d:%02d:%02d.%03d ",
-	    log_entries[i]->reb_dt->GetYear(),
-	    log_entries[i]->reb_dt->GetMonth(),
-	    log_entries[i]->reb_dt->GetDay(),
-	    log_entries[i]->reb_dt->GetHour(),
-	    log_entries[i]->reb_dt->GetMinute(),
-	    log_entries[i]->reb_dt->GetSecond(),
-	    log_entries[i]->reb_dt->GetMillisecond());
-
-    fprintf(pFile,"%8.5f %6.1f %5.1f %4.1f %2d % 9.0f % 8.0f ",
-	    log_entries[i]->reb_spot,
-	    log_entries[i]->reb_spot_change_pips,
-	    log_entries[i]->reb_step_pips,
-	    log_entries[i]->reb_slippage_pips,
-	    log_entries[i]->reb_num_orders_hit,
-	    log_entries[i]->reb_delta_hedge,
-	    log_entries[i]->reb_delta_unhedged);
-
-    fprintf(pFile,"% 7.0f % 8.0f % 7.0f % 7.0f % 8.0f ",
-	    log_entries[i]->reb_delta_pnl,
-	    log_entries[i]->total_delta_pnl,
-	    log_entries[i]->reb_opt_price_change,
-	    log_entries[i]->reb_portf_pnl, 
-	    log_entries[i]->total_portf_pnl);
-
-    fprintf(pFile,"% 7.0f % 7.0f % 7.0f % 7.0f % 7.0f\n",
-	    log_entries[i]->opt_delta_imp,
-	    log_entries[i]->opt_gamma_imp,
-	    log_entries[i]->opt_theta_imp,
-	    log_entries[i]->opt_xgamma_imp,
-	    log_entries[i]->reb_opt_price);
+  if(pFile==NULL){
+    perror("Error opening file");
+    printf("Error code opening file: %d\n",errno);
+    printf("Error opening file: %s\n",strerror(errno));
+    exit(-1);
   }
-  fclose(pFile);
+  else{
+
+    fprintf(pFile,"%23s ","dt");
+
+    fprintf(pFile,"%8s %6s %5s %4s %2s %9s %8s ","spot","chg","step","slpg","ht","delta","unhedged");
+    //"% 7.0f % 8.0f % 7.0f % 7.0f % 8.0f "
+    fprintf(pFile,"%7s %8s %7s %7s %8s ","de_pnl","de_total","op_chg","po_pnl","po_total");
+    //"% 7.0f % 7.0f % 7.0f % 7.0f % 7.0f\n"
+    fprintf(pFile,"%7s %7s %7s %7s %7s\n","o_delta","o_gamma","o_theta","o_xgm","op_prc");
+
+    for(int i=0; i<this->GetNumLogEntries();i++){
+      fprintf(pFile,"%d-%02d-%02d %02d:%02d:%02d.%03d ",
+	      log_entries[i]->reb_dt->GetYear(),
+	      log_entries[i]->reb_dt->GetMonth(),
+	      log_entries[i]->reb_dt->GetDay(),
+	      log_entries[i]->reb_dt->GetHour(),
+	      log_entries[i]->reb_dt->GetMinute(),
+	      log_entries[i]->reb_dt->GetSecond(),
+	      log_entries[i]->reb_dt->GetMillisecond());
+
+      fprintf(pFile,"%8.5f %6.1f %5.1f %4.1f %2d % 9.0f % 8.0f ",
+	      log_entries[i]->reb_spot,
+	      log_entries[i]->reb_spot_change_pips,
+	      log_entries[i]->reb_step_pips,
+	      log_entries[i]->reb_slippage_pips,
+	      log_entries[i]->reb_num_orders_hit,
+	      log_entries[i]->reb_delta_hedge,
+	      log_entries[i]->reb_delta_unhedged);
+
+      fprintf(pFile,"% 7.0f % 8.0f % 7.0f % 7.0f % 8.0f ",
+	      log_entries[i]->reb_delta_pnl,
+	      log_entries[i]->total_delta_pnl,
+	      log_entries[i]->reb_opt_price_change,
+	      log_entries[i]->reb_portf_pnl, 
+	      log_entries[i]->total_portf_pnl);
+
+      fprintf(pFile,"% 7.0f % 7.0f % 7.0f % 7.0f % 7.0f\n",
+	      log_entries[i]->opt_delta_imp,
+	      log_entries[i]->opt_gamma_imp,
+	      log_entries[i]->opt_theta_imp,
+	      log_entries[i]->opt_xgamma_imp,
+	      log_entries[i]->reb_opt_price);
+    }
+    fclose(pFile);
+  }
 }
 
 

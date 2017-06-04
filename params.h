@@ -152,7 +152,6 @@ c_params::c_params(std::string conf_file){
     
     if(string1 == "fxstraddle"){
       this->my_fxoptionscombination_type=fxstraddle;
-      std::cout<<"inside\n";
     }
     else{
       this->my_fxoptionscombination_type=fxspread;
