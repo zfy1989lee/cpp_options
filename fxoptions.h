@@ -285,7 +285,7 @@ void fxopt::CalculateD1D2(){
     this->ncdf_d1 = ncdf(d1);
     this->ncdf_d2 = ncdf(d2);
   }
-  else
+  else if ((this->ytm<this->min_ytm)&&(this->ytm>0))
   {
     this->d1 = (this->spot>this->strike)?5.0:-5.0;
     this->d2 = this->d1;
@@ -293,26 +293,36 @@ void fxopt::CalculateD1D2(){
     this->ncdf_d1 = this->LinearDeltaFunction();//ncdf(d1);
     this->ncdf_d2 = this->ncdf_d1;
   }
+  else{ //this->ytm==0
+    this->d1 = (this->spot>this->strike)?5.0:-5.0;
+    this->d2 = this->d1;
+
+    if(this->spot>this->strike)
+      this->ncdf_d1 = 1.0;
+    else
+      this->ncdf_d1 = 0.0;
+
+    this->ncdf_d2 = this->ncdf_d1;
+  }
 }
 
 double fxopt::LinearDeltaFunction() const {
   double width = this->linear_delta_width;
+  double ret_value = 0.0;
   if(this->otype==call){
     if(this->spot<this->strike)
-      return 0.0;
-    else{
-      double ret_value = (this->spot-this->strike)/(this->strike*width-this->strike);
-      return (ret_value>1.0)?1.0:ret_value;
-    }
+      ret_value = 0.0;
+    else//spot>strike
+      ret_value = (this->spot-this->strike)/(this->strike*width-this->strike);
   }
   else{ //put
     if(this->spot<this->strike/width)
-      return 0.0;
-    else{
-      double ret_value = (this->spot-this->strike/width)/(this->strike-this->strike/width);
-      return (ret_value>1.0)?1.0:ret_value;
-    }    
+      ret_value = 0.0;
+    else//spot<strike
+      ret_value = (this->spot-this->strike/width)/(this->strike-this->strike/width); 
   }
+  
+  return (ret_value>1.0)?(1.0):ret_value;
 }
 
 void fxopt::CalculatePrice(){

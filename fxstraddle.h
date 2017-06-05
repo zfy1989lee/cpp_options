@@ -43,7 +43,6 @@ FXStraddle::FXStraddle(FXStraddle * straddletocopy){
   }
 }
 
-
 FXStraddle::FXStraddle(double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp, double linear_delta_width, double min_ytm){
   this->num_portf = 2;
   this->portf = new fxopt*[2];

@@ -326,11 +326,11 @@ std::string c_cycle::get_filename(std::string dirname){
   return filename;
 }
 
-std::string c_cycle::sql_getcyclequotes(std::string tablename){
+std::string c_cycle::sql_getcyclequotes(std::string tablename, std::string start_time){
   std::string stringA = "SELECT quotedate, quotetime, quotems, quotebid, bidvolume, quoteoffer, offervolume, rowid from ";
 
   std::string stringB = " where ( (rowid>="+std::to_string(this->minrowid)+" and rowid<="+std::to_string(this->maxrowid)+") AND ";
-  std::string stringC = " ( (quotedate>'"+(this->cycle_start)+"' or (quotedate='"+(this->cycle_start)+"' and quotetime>='10:00:00')) AND ";
+  std::string stringC = " ( (quotedate>'"+(this->cycle_start)+"' or (quotedate='"+(this->cycle_start)+"' and quotetime>='"+start_time+"')) AND ";
   std::string stringD = " (quotedate<'"+(this->cycle_end)+"' or (quotedate='"+(this->cycle_end)+"' and quotetime<'10:00:00')) ) );";
 
   return stringA+tablename+stringB+stringC+stringD;
@@ -343,6 +343,7 @@ std::string sql_getquotesfromrowidrange(std::string tablename, unsigned int minr
 }
 
 void c_cycle::add_quote(c_quote * pquote){
+
   if(!
      ( (pquote->quote_dt->lt(*(this->cycle_start_dt)))
       ||
@@ -460,6 +461,7 @@ void c_cycle::load_fxoptionscombination(c_params * my_params){
   if(my_params->my_fxoptionscombination_type==fxstraddle){
     //double K, double V, double S, double F, double notional, dt mat, dt cur, option_direction mydir, option_ccypair mycp
     this->my_portf->LoadFXStraddle(this->strike,this->vol,this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, my_params->linear_delta_width, my_params->min_ytm);
+    //this->cycle_start_dt->print();
   }
   else{ // fxspread
     this->my_portf->LoadFXSpread(this->strike,*(my_params->strike_delta),this->vol,*(my_params->vol_spread),this->starting_spot,this->forward,10.0e6,*(this->cycle_end_dt),*(this->cycle_start_dt),this->odir, this->ocp, *(my_params->my_option_type), my_params->linear_delta_width, my_params->min_ytm);

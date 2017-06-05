@@ -90,7 +90,7 @@ int main(int argc, char **argv){
       string minrowid = res->getString(7);
       string maxrowid = res->getString(8);
 
-      my_cycles[num_cycles] = new c_cycle(cycle_id,cycle_start,"10:00:00.000",cycle_end,"10:00:00.000",start_quote,strike,forward,vol,minrowid,maxrowid,sell,my_params[k]->ccypair,my_params[k]->manual_rebalancing_delta_fraction);
+      my_cycles[num_cycles] = new c_cycle(cycle_id,cycle_start,my_params[k]->start_time,cycle_end,"10:00:00.000",start_quote,strike,forward,vol,minrowid,maxrowid,sell,my_params[k]->ccypair,my_params[k]->manual_rebalancing_delta_fraction);
       num_cycles++;
     }
 
@@ -158,6 +158,10 @@ int main(int argc, char **argv){
 	    //last rebalancing:
 	    if(q==t_cycle->num_quotes-1){
 	      //cout<<"last rebalancing\n";
+	      
+	      delete t_cycle->cycle_quotes[q]->quote_dt;
+	      t_cycle->cycle_quotes[q]->quote_dt = new dt(*(t_cycle->cycle_end_dt));
+
 	      fill_rate = t_cycle->my_portf->RebalanceDeltaAtMarket(*(t_cycle->cycle_quotes[q]),true);
 	      t_cycle->set_last_quote(fill_rate);
 	      t_cycle->my_portf->SetFinalPrice(fill_rate);
