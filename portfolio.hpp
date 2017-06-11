@@ -366,7 +366,7 @@ double Portfolio::RebalanceDeltaAtMarket(const dt & qtime, const double bid, con
     traded_delta = -(this->last_reb_delta_hedge - (-1)*mystraddle->GetDeltaC1Amount());
   }
   else{
-    if(mystraddle->GetDeltaC1Amount()!=0){
+    if(fabs(mystraddle->GetDeltaC1Amount())>0.01*mystraddle->GetC1Notional()){
       traded_delta = -(this->last_reb_delta_hedge - (-1)*mystraddle->GetDeltaC1Amount()/fabs(mystraddle->GetDeltaC1Amount())*mystraddle->GetC1Notional());
     }
     else{
