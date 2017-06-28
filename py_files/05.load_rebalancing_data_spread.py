@@ -33,7 +33,9 @@ opttypes = ["put","call"] # put or call
 delta = 25
 ccypairs = ["eurusd"]
 tenors = ["1w"]
-volspreads = ["m10","m05","m025","00","025","05","10"]
+#volspreads = ["m10","m05","m025","00","025","05","10"]
+volspreads = ["m05","m025","00","025","05"]
+#volspreads = ["00"]
 thresholds = [50,75,100,250,500,750,1000,1250,2500]
 
 for ccypair in ccypairs:

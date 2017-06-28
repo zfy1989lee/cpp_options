@@ -24,7 +24,7 @@ def LoadLastQuoteFromDB(ccypair):
    #utc_tz = timezone('UTC')
    #utc_datetime = utc_tz.localize(mydatetime)
 
-   if((result_array[0]!=None) and (result_array[1]!=None)):
+   if((result_array!=None) and (result_array[0]!=None) and (result_array[1]!=None)):
       return ConvertTwoStringsIntoDateTime(str(result_array[0]),str(result_array[1]))
    else:
       return ConvertTwoStringsIntoDateTime(str("1900-01-01"),str("10:00:00"))
@@ -53,16 +53,24 @@ def ParseString(mystr):
    return (utc_datetime.strftime("%Y-%m-%d"),utc_datetime.strftime("%H:%M:%S"),eastern_datetime.strftime("%Y-%m-%d"),eastern_datetime.strftime("%H:%M:%S"),myms,mybid,myoffer,mybidvol,myoffervol)
 
 
-ccypair = "usdjpy"
 tofolder = r"../dukascopy_data/"
 
-#files = ["USDJPY_UTC_Ticks_Bid_2008.12.31_2011.01.10.csv","USDJPY_UTC_Ticks_Bid_2011.01.01_2013.01.07.csv","USDJPY_UTC_Ticks_Bid_2013.01.01_2015.01.05.csv"]
+#EURUSD
+#files = ["EURUSD_UTC_Ticks_Bid_2016.01.01_2017.04.12.csv","EURUSD_UTC_Ticks_Bid_2017.04.01_2017.04.27.csv"]
 
-#files = ["USDJPY_UTC_Ticks_Bid_2015.01.01_2017.04.13.csv"]
+#GBPUSD
+#files = ["GBPUSD_2009_2012aa","GBPUSD_2009_2012ab","GBPUSD_UTC_Ticks_Bid_2012.04.01_2015.01.31.csv","GBPUSD_2015_2017_aa","GBPUSD_2015_2017_ab","GBPUSD_2015_2017_ac","GBPUSD_2015_2017_ad"]
 
-files = ["USDJPY_2015_2017aa","USDJPY_2015_2017ab","USDJPY_2015_2017ac","USDJPY_2015_2017ad"]
+#USDJPY
+files = ["USDJPY_UTC_Ticks_Bid_2008.12.31_2011.01.10.csv","USDJPY_UTC_Ticks_Bid_2011.01.01_2013.01.07.csv","USDJPY_UTC_Ticks_Bid_2013.01.01_2015.01.05.csv","USDJPY_UTC_Ticks_Bid_2015_2017_aa","USDJPY_UTC_Ticks_Bid_2015_2017_ab","USDJPY_UTC_Ticks_Bid_2017.04.01_2017.04.27.csv"]
+
+##files = ["USDJPY_UTC_Ticks_Bid_2015.01.01_2017.04.13.csv"]
+##files = ["USDJPY_UTC_Ticks_Bid_2017.04.01_2017.04.27.csv"]
 
 for filename in files:
+
+   ccypair = filename[0:6].lower();
+   print("ccypair ",ccypair)
 
    utc_datetime = LoadLastQuoteFromDB(ccypair.lower())
 

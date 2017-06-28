@@ -110,7 +110,7 @@ def GetMysqlOrder02(myhash,threshold,weekday):
 ####################################
 ####################################
 
-test_type = "straddle" # "spread" or "straddle"
+test_type = "spread" # "spread" or "straddle"
 
 table_name = "rebalancing_data_spreads" if (test_type=="spread") else "rebalancing_data_straddles"
 
@@ -127,12 +127,13 @@ if(test_type == "straddle"):
 
 else:
     ccypairs = ["eurusd"] 
-    tenors = ["1m"] 
+    tenors = ["1w"] 
     thresholds = [50,75,100,250,500,750,1000,1250,2500]
 
 delta = 25
 opttypes = ["put","call"]
-volspreads = ["m10","m05","00","05","10"]
+volspreads = ["m05","m025","00","025","05"]
+#volspreads = ["00"]
 
 years = range(2010,2018)
 dates = [datetime(i,1,1).date() for i in years]
