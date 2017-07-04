@@ -42,7 +42,7 @@ if(test_type=="straddle"):
                        for ccypair in ccypairs]
 
 else: #spread
-    ccypairs = ["eurusd","gbpusd"]
+    ccypairs = ["usdjpy"]
     tenors = ["1w"]
     thresholds = [50,75,100,250,500,750,1000,1250,2500]
     opttypes = ["put","call"] # put or call

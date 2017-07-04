@@ -358,7 +358,6 @@ double Portfolio::RebalanceDeltaAtMarket(const dt & qtime, const double bid, con
   double mid = 0.5*(bid+offer);
   double traded_delta = 0.0;
 
-  //FXStraddle *mystraddle = new FXStraddle(*(this->straddle));
   FXOptionsCombination * mystraddle = FXOptionsCombination::DynamicCaster(this->straddle);
   mystraddle->UpdateSpotDT(mid,qtime);
 
@@ -366,7 +365,13 @@ double Portfolio::RebalanceDeltaAtMarket(const dt & qtime, const double bid, con
     traded_delta = -(this->last_reb_delta_hedge - (-1)*mystraddle->GetDeltaC1Amount());
   }
   else{
-    if(fabs(mystraddle->GetDeltaC1Amount())>0.01*mystraddle->GetC1Notional()){
+    if(
+       ((mystraddle->GetOptionCcyPair()==USDXXX)&&
+	(fabs(mystraddle->GetDeltaC1Amount()-mystraddle->GetUSDPrice())>0.01*mystraddle->GetC1Notional()))
+       ||
+       ((mystraddle->GetOptionCcyPair()==XXXUSD)&&
+	(fabs(mystraddle->GetDeltaC1Amount())>0.01*mystraddle->GetC1Notional()))
+      ){
       traded_delta = -(this->last_reb_delta_hedge - (-1)*mystraddle->GetDeltaC1Amount()/fabs(mystraddle->GetDeltaC1Amount())*mystraddle->GetC1Notional());
     }
     else{
@@ -429,28 +434,6 @@ void Portfolio::CheckIfLogExtensionIsRequired(){
     delete[] tmp_copy;
     tmp_copy=NULL;
   }
-
-  // if((this->num_log_entries+1)==this->max_num_log_entries){
-  //   log_entry **tmp_copy = new log_entry*[this->max_num_log_entries];
-  //   for (int i = 0; i<this->num_log_entries;i++){
-  //     tmp_copy[i]=new log_entry(*(this->log_entries[i]));
-  //     delete this->log_entries[i];
-  //     this->log_entries[i]=NULL;
-  //   }
-  //   delete[] this->log_entries;
-  //   this->log_entries=NULL;
-
-  //   this->max_num_log_entries = 2*this->max_num_log_entries;
-  //   this->log_entries = new log_entry*[this->max_num_log_entries];
-
-  //   for (int i = 0; i<this->num_log_entries;i++){
-  //     this->log_entries[i]=new log_entry(*(tmp_copy[i]));
-  //     delete tmp_copy[i];
-  //     tmp_copy[i]=NULL;
-  //   }
-  //   delete[] tmp_copy;
-  //   tmp_copy=NULL;
-  // }
 }
 
 void Portfolio::PrintSteps() const {

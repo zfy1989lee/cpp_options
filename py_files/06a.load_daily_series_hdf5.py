@@ -115,7 +115,7 @@ def SaveResults(sharpefile, sharpe_df, sharpe_of_sharpes, yearly_sharpe_df, year
 ################
 ################
 
-test_type = "straddle" # straddle or spread
+test_type = "spread" # straddle or spread
 array_of_hashes = []
 
 if(test_type=="straddle"):
@@ -132,7 +132,7 @@ if(test_type=="straddle"):
 
 else: #spread
     #ccypairs = ["eurusd","gbpusd"]
-    ccypairs = ["eurusd"]
+    ccypairs = ["eurusd","usdjpy","gbpusd"]
     tenors = ["1w"]
     thresholds = [50,75,100,250,500,750,1000,1250,2500]
     opttypes = ["put","call"] # put or call

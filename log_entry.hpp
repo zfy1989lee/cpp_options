@@ -36,6 +36,10 @@ log_entry::log_entry(const Portfolio & myportf){
   this->reb_delta_unhedged = -(this->reb_delta_hedge + this->straddle->GetDeltaC1Amount());
   this->reb_opt_price = this->straddle->GetUSDPrice();
 
+  if(myportf.num_log_entries==0){
+    this->reb_opt_price = myportf.GetInitialPrice();
+  }
+
   if(myportf.num_log_entries>0){
     //FXStraddle * prev_straddle = new FXStraddle(*(myportf.log_entries[myportf.num_log_entries-1]->straddle));
     FXOptionsCombination * prev_straddle = FXOptionsCombination::DynamicCaster((myportf.log_entries[myportf.num_log_entries-1]->straddle));
@@ -52,7 +56,8 @@ log_entry::log_entry(const Portfolio & myportf){
 
     this->total_delta_pnl = myportf.log_entries[myportf.num_log_entries-1]->total_delta_pnl + this->reb_delta_pnl;
 
-    this->reb_opt_price_change = straddle->GetOptionDir()*(straddle->GetUSDPrice()-prev_straddle->GetUSDPrice());
+    //this->reb_opt_price_change = straddle->GetOptionDir()*(straddle->GetUSDPrice()-prev_straddle->GetUSDPrice());
+    this->reb_opt_price_change = straddle->GetOptionDir()*(straddle->GetUSDPrice()-myportf.log_entries[myportf.num_log_entries-1]->reb_opt_price);
 
     this->reb_portf_pnl = this->reb_opt_price_change + this->reb_delta_pnl;
 
