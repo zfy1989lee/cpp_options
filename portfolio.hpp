@@ -172,7 +172,7 @@ void Portfolio::LoadFXStraddle(double K, double V, double S, double F, double no
 }
 
 double Portfolio::GetStrikeForGivenDelta(double forward, double delta, double vol, double ytm){
-  return forward * exp(0.5 * vol * vol * sqrt(ytm) - vol * sqrt(ytm)*getinversenorm(delta));
+  return forward * exp(0.5 * vol * vol * ytm - vol * sqrt(ytm)*getinversenorm(delta));
 }
 
 void Portfolio::LoadFXSpread(double Kbuy, double strike_delta, double Vbuy, double dV, double S, double F, double notionalbuy, dt mat, dt cur, option_direction odir, option_ccypair ocp, option_type otype, double linear_delta_width, double min_ytm){

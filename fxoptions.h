@@ -9,7 +9,7 @@
 
 enum option_type {put=0, call=1};
 enum option_direction {buy=1, sell=-1};
-enum option_ccypair {XXXUSD=0, USDXXX=1}; // EURUSD and USDJPY
+enum option_ccypair {XXXUSD=0, USDXXX=1}; // EURUSD, GBPUSD and USDJPY
 
 class fxopt{
  public:
@@ -28,7 +28,6 @@ class fxopt{
   double GetUSDDelta(double) const;
   double GetUSDGamma(double) const;
   double GetUSDGammaForStepCalculation() const;
-  //double GetUSDSpeed(double) const;
   double GetDeltaC1Amount() const; 
 
   void UpdateSpot(double);
@@ -119,11 +118,6 @@ double fxopt::GetDeltaC1Amount() const {
 }
 
 double fxopt::GetUSDPayout(double last_quote) const{
-  //fxopt * tmpcopy = new fxopt(*this);
-  //tmpcopy->UpdateSpotDT(last_quote,*(this->maturity_dt));
-  //double return_value = tmpcopy->GetUSDPrice();
-  //delete tmpcopy;
-  //tmpcopy=NULL;
 
   double return_value=0;
 
@@ -218,14 +212,6 @@ double fxopt::GetUSDGamma(double change) const{
     return c2_pnl_amount/this->spot;    
 }
 
-/* double fxopt::GetUSDSpeed(double change) const{ */
-/*   double c2_pnl_amount = this->speed*this->notional_c1*change*change*change/6; */
-/*   if(this->ccypair==XXXUSD) */
-/*     return c2_pnl_amount; */
-/*   else */
-/*     return c2_pnl_amount/this->spot; */
-/* } */
-
 void fxopt::UpdateRisks(){
   this->CalculateYTM();
   this->CalculateForwardFromRFRates();
@@ -233,7 +219,6 @@ void fxopt::UpdateRisks(){
   this->CalculatePrice();
   this->CalculateDelta();
   this->CalculateGamma();
-  //this->CalculateSpeed();
   this->CalculateTheta();
   this->CalculateVega();
 }
